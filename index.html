@@ -353,18 +353,18 @@
       }
       /* ヘッダーを細い帯にする */
       .hero { flex: none; margin: 0 -.6rem; }
-      .hero img.scene { height: 3.4rem; object-position: center 58%; }
-      .sign { bottom: .3rem; border-width: 2px; border-radius: .8rem; padding: .05rem 1.1rem .2rem; }
-      .sign h1 { font-size: 1.4rem; }
+      .hero img.scene { height: 2.65rem; object-position: center 70%; }
+      .sign { bottom: .25rem; border-width: 2px; border-radius: .8rem; padding: .02rem 1rem .12rem; }
+      .sign h1 { font-size: 1.3rem; }
       .leaf-pill { top: .4rem; right: .6rem; font-size: 1.02rem; padding: .12rem .6rem .12rem .45rem; border-width: 2px; }
       .leaf-pill svg { width: 1.1rem; height: 1.1rem; }
-      .tagline { flex: none; margin: .3rem 0 0; font-size: .86rem; line-height: 1.35; }
+      .tagline { flex: none; margin: .22rem 0 0; font-size: .86rem; line-height: 1.35; }
 
       /* プレイ画面：残りの高さを配分して画面内に収める */
       #gameView {
         flex: 1 1 auto; min-height: 0;
         display: flex; flex-direction: column; gap: .34rem;
-        padding-top: .4rem;
+        padding-top: .3rem;
       }
       #forestView { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
@@ -409,15 +409,24 @@
         display: flex; flex-direction: column;
         border-radius: 1rem; padding: .5rem .55rem;
       }
-      .krows {
+      .krows { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+      .kgroup {
         flex: 1 1 auto; min-height: 0;
-        display: grid; grid-template-columns: 1fr 1fr;
-        grid-template-rows: repeat(5, minmax(0, 1fr));
-        gap: .32rem .55rem;
+        display: grid; grid-template-rows: repeat(5, minmax(0, 1fr)); gap: .32rem;
+      }
+      .ktabs { flex: none; display: flex; gap: .45rem; margin-bottom: .45rem; }
+      .ktabs button {
+        flex: 1; border: 2px solid var(--line); background: var(--bg-soft); color: var(--ink);
+        border-radius: .8rem; font-size: 1.18rem; font-weight: 800; padding: .3rem 0; line-height: 1.3;
+        box-shadow: 0 2px 0 var(--key-shadow);
+      }
+      .ktabs button[aria-pressed="true"] {
+        background: var(--green); border-color: var(--green-deep); color: #fff;
+        box-shadow: 0 2px 0 var(--green-deep);
       }
       .krow { display: flex; align-items: stretch; gap: .26rem; min-height: 0; min-width: 0; }
       .krow .rlabel {
-        width: 1.95rem; font-size: .68rem; padding: 0;
+        width: 2.7rem; font-size: .85rem; padding: 0;
         display: flex; align-items: center; justify-content: center;
       }
       .krow .keys {
@@ -427,7 +436,7 @@
       .key {
         min-height: 0; height: auto; padding: 0;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.12rem; border-radius: .55rem; border-bottom-width: 3px; line-height: 1;
+        font-size: 1.42rem; border-radius: .6rem; border-bottom-width: 3px; line-height: 1;
       }
       .kutils { flex: none; margin-top: .42rem; gap: .4rem; }
       .kutils button { padding: .28rem 0; font-size: .98rem; border-bottom-width: 3px; border-radius: .6rem; }
@@ -443,7 +452,7 @@
       /* 背の低い画面では装飾を畳んで、盤面とキーボードを守る */
       @media (max-height: 46rem) {
         .tagline, .legend, footer.note { display: none; }
-        .hero img.scene { height: 2.9rem; }
+        .hero img.scene { height: 2.3rem; }
         .board-title { display: none; }
         .history { max-height: 2.25rem; }
         .tile { width: 2.85rem; height: 2.85rem; font-size: 1.65rem; }
@@ -451,8 +460,10 @@
       }
       @media (max-height: 37rem) {
         .peek, .skip-row { display: none; }
-        .hero img.scene { height: 2.3rem; }
+        .hero img.scene { height: 1.95rem; }
         .sign h1 { font-size: 1.15rem; }
+        .ktabs { margin-bottom: .32rem; }
+        .ktabs button { padding: .16rem 0; font-size: 1.02rem; }
         .history { display: none; }
         .bubble { font-size: .88rem; }
       }
@@ -520,6 +531,10 @@
         <p class="peek" id="peek"></p>
 
         <section class="keyboard" aria-label="五十音キーボード">
+          <div class="ktabs" role="group" aria-label="五十音の切り替え">
+            <button type="button" id="ktabA" aria-pressed="true">あ〜な</button>
+            <button type="button" id="ktabB" aria-pressed="false">は〜わ</button>
+          </div>
           <div class="krows" id="krows"></div>
           <div class="kutils">
             <button type="button" id="dakuBtn">゛ ゜ <small>だくてん</small></button>
@@ -706,7 +721,11 @@ var ROWS = [
 var keyBtns = {};
 (function buildKeyboard() {
 var wrap = $("krows");
-ROWS.forEach(function (row) {
+[ROWS.slice(0, 5), ROWS.slice(5, 10)].forEach(function (rows, gi) {
+var box = document.createElement("div");
+box.className = "kgroup"; box.id = "kgroup" + gi;
+if (gi > 0) box.hidden = true;
+rows.forEach(function (row) {
 var r = document.createElement("div"); r.className = "krow";
 var lab = document.createElement("span"); lab.className = "rlabel " + row.cls; lab.textContent = row.label;
 r.appendChild(lab);
@@ -722,9 +741,19 @@ keyBtns[k] = b;
 }
 keys.appendChild(b);
 });
-r.appendChild(keys); wrap.appendChild(r);
+r.appendChild(keys); box.appendChild(r);
+});
+wrap.appendChild(box);
 });
 })();
+function showKGroup(gi) {
+$("kgroup0").hidden = gi !== 0;
+$("kgroup1").hidden = gi !== 1;
+$("ktabA").setAttribute("aria-pressed", gi === 0? "true": "false");
+$("ktabB").setAttribute("aria-pressed", gi === 1? "true": "false");
+}
+$("ktabA").addEventListener("click", function () { showKGroup(0);});
+$("ktabB").addEventListener("click", function () { showKGroup(1);});
 
 var DAKU = {"か":"が","き":"ぎ","く":"ぐ","け":"げ","こ":"ご","さ":"ざ","し":"じ","す":"ず","せ":"ぜ","そ":"ぞ","た":"だ","ち":"ぢ","つ":"づ","て":"で","と":"ど","は":"ば","ひ":"び","ふ":"ぶ","へ":"べ","ほ":"ぼ","う":"ゔ","ば":"ぱ","び":"ぴ","ぶ":"ぷ","べ":"ぺ","ぼ":"ぽ","ぱ":"は","ぴ":"ひ","ぷ":"ふ","ぺ":"へ","ぽ":"ほ"};
 var SMALL = {"あ":"ぁ","い":"ぃ","う":"ぅ","え":"ぇ","お":"ぉ","や":"ゃ","ゆ":"ゅ","よ":"ょ","つ":"っ","わ":"ゎ","ぁ":"あ","ぃ":"い","ぅ":"う","ぇ":"え","ぉ":"お","ゃ":"や","ゅ":"ゆ","ょ":"よ","っ":"つ","ゎ":"わ"};

@@ -420,7 +420,7 @@
       /* プレイ画面：残りの高さを配分して画面内に収める */
       #gameView {
         flex: 1 1 auto; min-height: 0;
-        display: flex; flex-direction: column; gap: .34rem;
+        display: flex; flex-direction: column; gap: .26rem;
         padding-top: .08rem; padding-bottom: .3rem;
       }
       #forestView { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -429,19 +429,19 @@
       .modes button { border-width: 2px; border-radius: .8rem; padding: .3rem .15rem .38rem; font-size: 1.12rem; line-height: 1.25; box-shadow: 0 2px 0 var(--key-shadow); }
       .modes button small { display: block; font-size: .72rem; margin: .05rem 0 0; }
 
-      .board { flex: none; border-width: 2px; border-radius: 1.1rem; padding: .38rem; }
-      .board-inner { border-radius: .85rem; padding: .5rem .6rem .55rem; }
-      .board-title { font-size: 1.05rem; margin: 0 0 .38rem; }
-      .hint-row { padding: .2rem .7rem .2rem .3rem; margin-bottom: .45rem; gap: .5rem; border-width: 2px; }
+      .board { flex: none; border-width: 2px; border-radius: 1.1rem; padding: .3rem; }
+      .board-inner { border-radius: .85rem; padding: .42rem .55rem .45rem; }
+      .board-title { display: none; }
+      .hint-row { padding: .16rem .7rem .16rem .3rem; margin-bottom: .3rem; gap: .5rem; border-width: 2px; }
       .hint-chip { font-size: .86rem; padding: .14rem .55rem; }
       .hint-text { font-size: .96rem; line-height: 1.35; }
-      .tiles { gap: .38rem; margin: .15rem 0 .28rem; }
+      .tiles { gap: .38rem; margin: .1rem 0 .2rem; }
       .tile {
-        width: 3.05rem; height: 3.05rem; max-width: 15.5vw; max-height: 15.5vw;
+        width: 2.95rem; height: 2.95rem; max-width: 15.5vw; max-height: 15.5vw;
         font-size: 1.8rem; border-width: 2px; border-radius: .8rem;
       }
       .board-sub { font-size: .88rem; line-height: 1.35; }
-      .legend { margin-top: .32rem; font-size: .78rem; gap: .2rem .65rem; line-height: 1.3; }
+      .legend { margin-top: .22rem; font-size: .78rem; gap: .2rem .65rem; line-height: 1.3; }
       .swatch { width: .9rem; height: .9rem; }
       /* 履歴だけは枠の中で収める（画面自体はスクロールさせない） */
       .history { margin-top: .4rem; max-height: 2.35rem; gap: .28rem; }
@@ -462,26 +462,35 @@
 
       /* プレイ画面のうさぎ＋吹き出しは小さく（盤面とキーボードを優先） */
       #gameView .mascot-row { gap: .45rem; }
-      #gameView .mascot { width: 2.7rem; min-height: 2.7rem; border-radius: .7rem; }
-      #gameView .bubble { font-size: .84rem; line-height: 1.4; padding: .32rem .55rem; border-radius: .75rem; }
-      #gameView .bubble::before { top: .6rem; }
-      #gameView .bubble-col { gap: .3rem; }
-      #gameView .side-btns button { font-size: .92rem; padding: .22rem .35rem; }
-      #gameView .side-btns svg { width: 1.05rem; height: 1.05rem; }
+      /* プレイ画面の真ん中の帯：うさぎ＋吹き出し＋ヒントを1行に薄くまとめる */
+      #gameView .mascot-row { gap: .4rem; align-items: center; }
+      #gameView .mascot { width: 1.9rem; height: 2.5rem; min-height: 0; border-width: 2px; border-radius: .55rem; }
+      #gameView .bubble-col { flex-direction: row; align-items: center; gap: .4rem; }
+      #gameView .bubble {
+        flex: 1 1 auto; min-width: 0; font-size: .84rem; line-height: 1.3;
+        padding: .3rem .55rem; border-radius: .7rem;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      #gameView .bubble::before { top: 50%; margin-top: -.5rem; }
+      #gameView .side-btns { flex: none; margin: 0; }
+      #gameView .side-btns button { font-size: .8rem; padding: .3rem .5rem; border-radius: .7rem; gap: .25rem; white-space: nowrap; }
+      #gameView .side-btns svg { width: .95rem; height: .95rem; }
+      /* ステータス行（森のようす）はプレイ画面では出さない。同じ内容はホーム画面と森の画面で見られる */
+      #gameView .peek { display: none; }
 
       /* キーボード：2列×5行のグリッドで、余った高さいっぱいに広げる */
       .keyboard {
-        flex: 1 1 auto; min-height: 0;
+        flex: 1 1 auto; min-height: 0; overflow: hidden;
         display: flex; flex-direction: column;
-        border-radius: 1rem; padding: .5rem .55rem;
+        border-radius: 1rem; padding: .42rem .5rem;
       }
-      .krows { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-      .kgroup { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: .26rem; }
+      .krows { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+      .kgroup { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: .24rem; }
       .kgroup .krow { flex: 1 1 0; min-height: 2.55rem; }
-      .ktabs { flex: none; display: flex; gap: .45rem; margin-bottom: .45rem; }
+      .ktabs { flex: none; display: flex; gap: .45rem; margin-bottom: .35rem; }
       .ktabs button {
         flex: 1; border: 2px solid var(--line); background: var(--bg-soft); color: var(--ink);
-        border-radius: .8rem; font-size: 1.16rem; font-weight: 800; padding: .26rem 0; line-height: 1.3;
+        border-radius: .8rem; font-size: 1.16rem; font-weight: 800; padding: .2rem 0; line-height: 1.3;
         box-shadow: 0 2px 0 var(--key-shadow);
       }
       .ktabs button[aria-pressed="true"] {
@@ -502,13 +511,13 @@
         display: flex; align-items: center; justify-content: center;
         font-size: 1.5rem; border-radius: .6rem; border-bottom-width: 3px; line-height: 1.1;
       }
-      .kutils { flex: none; margin-top: .42rem; gap: .4rem; }
-      .kutils button { padding: .28rem 0; font-size: .98rem; border-bottom-width: 3px; border-radius: .6rem; }
+      .kutils { flex: none; margin-top: .32rem; gap: .4rem; }
+      .kutils button { padding: .22rem 0; font-size: .98rem; border-bottom-width: 3px; border-radius: .6rem; }
       .kutils button small { font-size: .72rem; }
 
       .actions { flex: none; margin-top: 0; gap: .5rem; }
-      .btn-clear { width: 6.4rem; font-size: 1.1rem; padding: .42rem 0; border-width: 2px; border-bottom-width: 4px; }
-      .btn-answer { font-size: 1.26rem; padding: .42rem 0; border-width: 2px; border-bottom-width: 4px; }
+      .btn-clear { width: 6.4rem; font-size: 1.1rem; padding: .36rem 0; border-width: 2px; border-bottom-width: 4px; }
+      .btn-answer { font-size: 1.26rem; padding: .36rem 0; border-width: 2px; border-bottom-width: 4px; }
       .skip-row { flex: none; margin-top: 0; }
       .skip-row button { font-size: .86rem; padding: .15rem .8rem; min-height: 1.8rem; }
       footer.note { flex: none; margin-top: 0; font-size: .78rem; line-height: 1.3; }
@@ -521,6 +530,16 @@
         .history { max-height: 2.25rem; }
         .tile { width: 2.85rem; height: 2.85rem; font-size: 1.65rem; }
         .mascot { width: 3rem; min-height: 3rem; }
+        #gameView { gap: .22rem; }
+        #gameView .mascot { width: 1.8rem; height: 2.4rem; }
+        #gameView .bubble { font-size: .8rem; padding: .26rem .45rem; }
+        .ktabs { margin-bottom: .3rem; }
+        .ktabs button { padding: .13rem 0; font-size: 1.05rem; }
+        .kgroup .krow { min-height: 2.4rem; }
+        .key { font-size: 1.4rem; min-height: 2.4rem; }
+        .kutils { margin-top: .28rem; }
+        .kutils button { padding: .15rem 0; }
+        .btn-clear, .btn-answer { padding: .3rem 0; }
       }
       @media (max-height: 37rem) {
         .peek, .skip-row { display: none; }
@@ -852,7 +871,7 @@ if (over) return;
 for (var i = 0; i < answer.chars.length; i++) {
 if (!locked[i] &&!input[i]) {
 input[i] = k; renderTiles(i);
-if (input.every(function (c) { return!!c;})) say("そろったね。「こたえる」を おしてね。");
+if (input.every(function (c) { return!!c;})) say("そろったよ。「こたえる」をおしてね");
 return;
 }
 }
@@ -860,9 +879,9 @@ return;
 function transformLast(map, kindName) {
 if (over) return;
 var i = lastFreeIndex();
-if (i < 0) { say("まず、文字を 入れてから おしてね。"); return;}
+if (i < 0) { say("まず 文字を いれてね。"); return;}
 var next = map[input[i]];
-if (!next) { say("「" + input[i] + "」には " + kindName + " は つかないよ。"); return;}
+if (!next) { say("「" + input[i] + "」には" + kindName + "は つかないよ。"); return;}
 input[i] = next; renderTiles(i);
 }
 $("dakuBtn").addEventListener("click", function () { transformLast(DAKU, "だくてん");});
@@ -967,7 +986,7 @@ guesses = []; keyState = {}; over = false;
 $("catText").textContent = answer.cat;
 $("hintText").textContent = answer.hint;
 renderTiles(-1); renderHistory(); renderKeys(); renderPeek();
-say("「" + answer.cat + "」の ことばだよ。" + mode + "もじ、あててみてね。");
+say("「" + answer.cat + "」" + mode + "もじ、あててみてね。");
 }
 function evaluate(guess) {
 var res = guess.map(function () { return "ng";});
@@ -982,13 +1001,13 @@ if (rest[c] > 0) { res[i] = "mid"; rest[c]--;}
 });
 return res;
 }
-var PRAISE = ["だいじょうぶ、ゆっくり 考えよう。", "まちがえても 平気だよ。ヒントが ふえたね。", "いい 調子。その ちょうしで いこう。", "森で 待ってるよ。あせらないでね。"];
+var PRAISE = ["だいじょうぶ、ゆっくりね。", "まちがえても 平気だよ。", "いい調子、そのちょうし！", "森で待ってるよ、あせらずに。"];
 $("answerBtn").addEventListener("click", function () {
 if (over) return;
 if (input.some(function (c) { return!c;})) {
 var board = $("board");
 board.classList.remove("shake"); void board.offsetWidth; board.classList.add("shake");
-say("まだ " + mode + "もじに なってないよ。空いてる マスを うめてね。");
+say("まだ " + mode + "もじに なってないよ。");
 return;
 }
 var res = evaluate(input);
@@ -1004,14 +1023,14 @@ if (okCount === answer.chars.length) { win(); return;}
 input = answer.chars.map(function (c, i) { return locked[i]? c: "";});
 renderTiles(-1);
 if (okCount >= Math.ceil(answer.chars.length / 2)) { hopMascot(); say("すごい！ あと すこしだよ！");}
-else if (res.some(function (r) { return r === "mid";})) say("おしい！ 黄色の 文字が ことばに 入ってるよ。");
+else if (res.some(function (r) { return r === "mid";})) say("おしい！黄色が ことばに あるよ。");
 else say(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
 });
 $("hintBtn").addEventListener("click", function () {
 if (over) return;
 var cand = [];
 answer.chars.forEach(function (c, i) { if (!locked[i]) cand.push(i);});
-if (!cand.length) { say("ヒントで ぜんぶ わかってるよ。そのまま 入れてみてね。"); return;}
+if (!cand.length) { say("ヒントで ぜんぶ わかったよ。"); return;}
 var i = cand[Math.floor(Math.random() * cand.length)];
 locked[i] = true; input[i] = answer.chars[i];
 renderTiles(i); hopMascot();
@@ -1019,7 +1038,7 @@ say("ヒント：" + (i + 1) + "もじめは「" + answer.chars[i] + "」だよ�
 });
 $("skipBtn").addEventListener("click", function () {
 newPuzzle();
-say("だいじょうぶ。べつの ことばに したよ。ゆっくり いこう。");
+say("べつの ことばに したよ。");
 });
 
 /* ================= 正解 ================= */

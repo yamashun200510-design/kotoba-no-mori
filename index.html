@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fdf6df" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1d2b1e" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="data:," />
     <title>ことばの森</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -58,7 +60,7 @@
         }
       }
       * { box-sizing: border-box; }
-      html { -webkit-text-size-adjust: 100%; }
+      html { -webkit-text-size-adjust: 100%; background: var(--bg); }
       body {
         margin: 0;
         font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
@@ -362,7 +364,7 @@
       .tagline { flex: none; margin: .5rem 0 0; font-size: .95rem; line-height: 1.4; }
 
       /* プレイ画面のヘッダー：看板の左右に もどる／ホーム */
-      .game-head { flex: none; display: flex; align-items: center; gap: .4rem; padding-top: .35rem; }
+      .game-head { flex: none; display: flex; align-items: center; gap: .4rem; padding-top: 0; }
       .nav-btn {
         flex: none; display: inline-flex; align-items: center; gap: .25rem;
         background: var(--card); border: 2px solid var(--line); border-radius: 999px;
@@ -419,7 +421,7 @@
       #gameView {
         flex: 1 1 auto; min-height: 0;
         display: flex; flex-direction: column; gap: .34rem;
-        padding-top: .3rem;
+        padding-top: .08rem; padding-bottom: .3rem;
       }
       #forestView { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
@@ -435,14 +437,14 @@
       .hint-text { font-size: .96rem; line-height: 1.35; }
       .tiles { gap: .38rem; margin: .15rem 0 .28rem; }
       .tile {
-        width: 3.25rem; height: 3.25rem; max-width: 15.5vw; max-height: 15.5vw;
-        font-size: 1.9rem; border-width: 2px; border-radius: .8rem;
+        width: 3.05rem; height: 3.05rem; max-width: 15.5vw; max-height: 15.5vw;
+        font-size: 1.8rem; border-width: 2px; border-radius: .8rem;
       }
       .board-sub { font-size: .88rem; line-height: 1.35; }
       .legend { margin-top: .32rem; font-size: .78rem; gap: .2rem .65rem; line-height: 1.3; }
       .swatch { width: .9rem; height: .9rem; }
       /* 履歴だけは枠の中で収める（画面自体はスクロールさせない） */
-      .history { margin-top: .4rem; max-height: 3.3rem; gap: .28rem; }
+      .history { margin-top: .4rem; max-height: 2.35rem; gap: .28rem; }
       .hrow .n { width: 2.9rem; font-size: .8rem; }
       .hrow .cells { gap: .26rem; }
       .hcell { width: 1.95rem; height: 1.95rem; font-size: 1.1rem; border-radius: .45rem; }
@@ -458,6 +460,15 @@
       .side-btns svg { width: 1.2rem; height: 1.2rem; }
       .peek { flex: none; margin: 0; font-size: .8rem; line-height: 1.35; }
 
+      /* プレイ画面のうさぎ＋吹き出しは小さく（盤面とキーボードを優先） */
+      #gameView .mascot-row { gap: .45rem; }
+      #gameView .mascot { width: 2.7rem; min-height: 2.7rem; border-radius: .7rem; }
+      #gameView .bubble { font-size: .84rem; line-height: 1.4; padding: .32rem .55rem; border-radius: .75rem; }
+      #gameView .bubble::before { top: .6rem; }
+      #gameView .bubble-col { gap: .3rem; }
+      #gameView .side-btns button { font-size: .92rem; padding: .22rem .35rem; }
+      #gameView .side-btns svg { width: 1.05rem; height: 1.05rem; }
+
       /* キーボード：2列×5行のグリッドで、余った高さいっぱいに広げる */
       .keyboard {
         flex: 1 1 auto; min-height: 0;
@@ -465,12 +476,12 @@
         border-radius: 1rem; padding: .5rem .55rem;
       }
       .krows { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-      .kgroup { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: .32rem; }
-      .kgroup .krow { flex: 1 1 auto; min-height: 0; }
+      .kgroup { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: .26rem; }
+      .kgroup .krow { flex: 1 1 0; min-height: 2.55rem; }
       .ktabs { flex: none; display: flex; gap: .45rem; margin-bottom: .45rem; }
       .ktabs button {
         flex: 1; border: 2px solid var(--line); background: var(--bg-soft); color: var(--ink);
-        border-radius: .8rem; font-size: 1.28rem; font-weight: 800; padding: .36rem 0; line-height: 1.3;
+        border-radius: .8rem; font-size: 1.16rem; font-weight: 800; padding: .26rem 0; line-height: 1.3;
         box-shadow: 0 2px 0 var(--key-shadow);
       }
       .ktabs button[aria-pressed="true"] {
@@ -487,9 +498,9 @@
         display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .26rem;
       }
       .key {
-        min-height: 0; height: auto; padding: 0;
+        min-height: 2.55rem; height: auto; padding: 0; overflow: hidden;
         display: flex; align-items: center; justify-content: center;
-        font-size: 1.68rem; border-radius: .6rem; border-bottom-width: 3px; line-height: 1;
+        font-size: 1.5rem; border-radius: .6rem; border-bottom-width: 3px; line-height: 1.1;
       }
       .kutils { flex: none; margin-top: .42rem; gap: .4rem; }
       .kutils button { padding: .28rem 0; font-size: .98rem; border-bottom-width: 3px; border-radius: .6rem; }
@@ -562,13 +573,13 @@
             <span class="nav-label">もどる</span>
           </button>
           <div class="sign"><h1>ことばの森</h1></div>
-          <button type="button" class="leaf-pill" data-forest aria-label="はっぱの数。おすと森が見られます">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-5 0-8-3.6-8-9 0-4.5 3-8.4 8.6-9.4C17.5 1.7 20 2 20 2s.4 3-.4 7.2C18.4 15.6 16 21 12 21Z" fill="#57a047"/><path d="M12 20c.6-5.5 2.6-10.4 6.4-14.6" stroke="#3c7a30" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
-            <span class="leaf-count">0</span>
-          </button>
           <button type="button" class="nav-btn" id="homeBtn" aria-label="ホームへ">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 10v9.5h11V10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span class="nav-label">ホーム</span>
+          </button>
+          <button type="button" class="leaf-pill" data-forest aria-label="はっぱの残高。おすと森が見られます">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-5 0-8-3.6-8-9 0-4.5 3-8.4 8.6-9.4C17.5 1.7 20 2 20 2s.4 3-.4 7.2C18.4 15.6 16 21 12 21Z" fill="#57a047"/><path d="M12 20c.6-5.5 2.6-10.4 6.4-14.6" stroke="#3c7a30" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+            <span class="leaf-count">0</span>
           </button>
         </div>
 

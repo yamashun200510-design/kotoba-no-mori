@@ -136,4 +136,56 @@ void main() {
       });
     }
   }
+
+  for (final size in const [Size(320, 640), Size(360, 720)]) {
+    for (final large in const [false, true]) {
+      testWidgets('文字数をえらぶ画面の文が$size・大きめ=$largeでも言葉の途中で改行されない', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
+        final progress = Progress(reduceMotion: true, largeText: large)
+          ..loginDate = Progress.dayKey(DateTime.now())
+          ..loginDay = 1;
+        SharedPreferences.setMockInitialValues({
+          'forest_progress': progress.encode(),
+        });
+        await tester.pumpWidget(const ForestApp());
+        await enterPastTitle(tester);
+        await tester.pump(const Duration(seconds: 1));
+        final dynamic app = tester.state(find.byType(ForestApp));
+        app.go('文字数をえらぶ');
+        await tester.pump(const Duration(seconds: 1));
+        final labels = [
+          '何文字であそびますか？',
+          '途中の答えは、文字数ごとに残ります。',
+          '${words.where((w) => w.text.length == 3).length}問 ・ 何度でもあそべます',
+        ];
+        for (final label in labels) {
+          final text = tester.widgetList<Text>(findLabel(label)).first;
+          final paragraph = tester
+              .renderObjectList<RenderParagraph>(
+                find.descendant(
+                  of: find.byWidget(text),
+                  matching: find.byType(RichText),
+                ),
+              )
+              .first;
+          final shown = paragraph.text.toPlainText();
+          expect(
+            paragraph
+                .getBoxesForSelection(
+                  TextSelection(baseOffset: 0, extentOffset: shown.length),
+                )
+                .map((b) => b.top.round())
+                .toSet()
+                .length,
+            shown.split('\n').length,
+            reason: label,
+          );
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 }

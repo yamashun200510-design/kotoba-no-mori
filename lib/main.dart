@@ -394,13 +394,41 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
   }
 
   List<Widget> modePicker() => [
-    heading('何文字であそびますか？'),
-    const Text('途中の答えは、文字数ごとに残ります。'),
+    // Line breaks only between words (see fitLabel), never 「あそべま／す」.
+    fitLabel(
+      '何文字であそびますか？',
+      const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, height: 1.4),
+      broken: '何文字で\nあそびますか？',
+      textAlign: TextAlign.left,
+      alignment: Alignment.centerLeft,
+    ),
+    fitLabel(
+      '途中の答えは、文字数ごとに残ります。',
+      const TextStyle(),
+      broken: '途中の答えは、\n文字数ごとに残ります。',
+      textAlign: TextAlign.left,
+      alignment: Alignment.centerLeft,
+    ),
     for (final length in [3, 4, 5])
       panel([
         button('$length文字であそぶ', () => chooseLength(length), primary: true),
-        Text(
-          '${words.where((w) => w.text.length == length).length}問 ・ ${progress.modes[length]?.guesses.isNotEmpty == true || progress.modes[length]?.draft.isNotEmpty == true ? 'つづきがあります' : '何度でもあそべます'}',
+        Builder(
+          builder: (context) {
+            final count = words.where((w) => w.text.length == length).length;
+            final mode = progress.modes[length];
+            final status =
+                mode?.guesses.isNotEmpty == true ||
+                    mode?.draft.isNotEmpty == true
+                ? 'つづきがあります'
+                : '何度でもあそべます';
+            return fitLabel(
+              '$count問 ・ $status',
+              const TextStyle(),
+              broken: '$count問\n$status',
+              textAlign: TextAlign.left,
+              alignment: Alignment.centerLeft,
+            );
+          },
         ),
       ]),
     if (progress.legacyAvailable)

@@ -9,6 +9,7 @@
 ## 現状（2026-11-27 むせ記）
 
 - Google Play 開発者登録は完了（開発者名「Amuse工房」）。
+- プライバシーポリシーを GitHub Pages に公開済み（2026-11-27 むせ）: https://yamashun200510-design.github.io/kotoba-no-mori/privacy.html （privacy.html、Play Console 登録時にこのURLを使う）
 - 融合（Flutter 本体＋Web版の設計移植）は実装完了:
   - 5文字モード開放、履歴圧縮（プレイ画面ノースクロール）、吹き出し小型化、Web版単語22語追加（総数633語・検証エラー0）、applicationId を jp.amuse.kotobanomori に統一。
   - 上記のうち **lib/main.dart 以外は GitHub に push 済み**。

@@ -43,7 +43,7 @@ void main() {
         expect(bounds.top, greaterThanOrEqualTo(0), reason: text);
         expect(bounds.bottom, lessThanOrEqualTo(size.height), reason: text);
       }
-      expect(find.text('3文字・4文字をえらぶ'), findsNothing);
+      expect(find.text('3文字・4文字・5文字をえらぶ'), findsNothing);
       expect(find.byType(ForestScene), findsNothing);
       expect(find.byType(FantasyBackdrop), findsOneWidget);
       await tester.tap(find.text('わたしの森'));

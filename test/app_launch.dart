@@ -44,7 +44,7 @@ Future<void> enterModePickerFromHome(WidgetTester tester) async {
   // pumpAndSettle can never finish while it is visible.
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 700));
-  await tester.tap(find.text('3文字・4文字をえらぶ'));
+  await tester.tap(find.text('3文字・4文字・5文字をえらぶ'));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 700));
 }

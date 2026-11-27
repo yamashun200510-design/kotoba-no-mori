@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kotoba_no_mori/game.dart';
 
 void main() {
-  for (final length in [3, 4]) {
+  for (final length in [3, 4, 5]) {
     test('$length文字は一巡まで重複せず、再起動と2周目でも順序・報酬を保つ', () {
       var p = Progress(mode: length);
       final count = words.where((w) => w.text.length == length).length;

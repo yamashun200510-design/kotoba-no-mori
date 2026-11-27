@@ -312,7 +312,7 @@ class ModePuzzle {
       draft: data['draft'] as String? ?? '',
       clearRecorded: data['clearRecorded'] as bool? ?? false,
     );
-    if (![3, 4].contains(length) ||
+    if (![3, 4, 5].contains(length) ||
         p.order.isEmpty ||
         p.cursor < 0 ||
         p.hints < 0 ||
@@ -549,7 +549,7 @@ class Progress {
 
   Word get legacyWord => legacyWords[_legacyIndex % legacyWords.length];
   void selectMode(int length) {
-    if (![3, 4].contains(length)) throw ArgumentError('mode');
+    if (![3, 4, 5].contains(length)) throw ArgumentError('mode');
     if (!modes.containsKey(length)) {
       final pool = words
           .where((w) => w.text.length == length)

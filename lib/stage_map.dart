@@ -351,7 +351,7 @@ class _ForestStageMapState extends State<ForestStageMap>
             style: OutlinedButton.styleFrom(
               backgroundColor: const Color(0xF5FFF9E7),
             ),
-            child: const Text('3文字・4文字をえらぶ'),
+            child: const Text('3文字・4文字・5文字をえらぶ'),
           ),
         ),
       ),

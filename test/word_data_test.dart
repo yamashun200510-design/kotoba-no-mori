@@ -30,7 +30,11 @@ void main() {
       words.where((w) => w.text.length == 5).length,
       greaterThanOrEqualTo(50),
     );
-    expect(() => Progress().selectMode(5), throwsArgumentError);
+    expect(() => Progress().selectMode(2), throwsArgumentError);
+    expect(() => Progress().selectMode(6), throwsArgumentError);
+    final five = Progress()..selectMode(5);
+    expect(five.mode, 5);
+    expect(five.word.text.length, 5);
   });
 
   test('検査が重複・長さ・不正文字・入力不能文字・カテゴリ・ヒントを検出する', () {

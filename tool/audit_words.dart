@@ -11,7 +11,7 @@ void main() {
       'total': words.length,
       'three': words.where((w) => w.text.length == 3).length,
       'four': words.where((w) => w.text.length == 4).length,
-      'fiveReserved': words.where((w) => w.text.length == 5).length,
+      'five': words.where((w) => w.text.length == 5).length,
       'other': words.where((w) => ![3, 4, 5].contains(w.text.length)).length,
       'byLength': {
         for (final length in words.map((w) => w.text.length).toSet())
@@ -20,12 +20,12 @@ void main() {
       'duplicateExtraEntries': words.length - unique.length,
       'invalid': invalid,
       'normalPlayableUnique': unique
-          .where((text) => [3, 4].contains(text.length))
+          .where((text) => [3, 4, 5].contains(text.length))
           .length,
       'dailyPoolUnique': legacyWords.map((w) => w.text).toSet().length,
       'availableAcrossPublishedModes': {
         ...legacyWords.map((w) => w.text),
-        ...unique.where((text) => [3, 4].contains(text.length)),
+        ...unique.where((text) => [3, 4, 5].contains(text.length)),
       }.length,
     }),
   );

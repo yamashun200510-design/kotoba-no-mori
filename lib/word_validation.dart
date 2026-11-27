@@ -23,6 +23,7 @@ List<String> validateWords(
     'あそび',
     'しぜん',
     'ばしょ',
+    'ひと',
   };
   for (final entry in entries) {
     final text = entry.text;

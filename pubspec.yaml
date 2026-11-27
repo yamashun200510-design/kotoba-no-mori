@@ -1,0 +1,36 @@
+name: kotoba_no_mori
+description: ゆっくり楽しむ日本語単語パズル
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: '>=3.35.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.3.2
+  google_mobile_ads: ^9.2.0
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: ZenMaru
+      fonts:
+        - asset: assets/fonts/ZenMaruGothic-Bold.ttf
+          weight: 700
+  assets:
+    - assets/art/cartoon-home.png
+    - assets/art/cartoon-map.png
+    - assets/art/enchanted-forest.png
+    - assets/art/title-portal.png
+    - assets/art/magic-tree.png
+    - assets/art/home-glade.png
+    - assets/art/forest-garden.png
+    - assets/art/forest-shop-cottage.png
+    - assets/art/daily-reward-chest.png
+    - assets/fonts/OFL.txt
+    - assets/sounds/
+    - assets/music/

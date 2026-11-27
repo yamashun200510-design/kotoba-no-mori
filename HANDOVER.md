@@ -33,10 +33,60 @@
   - テスト全133件成功。
 - main への取り込みは しゅん の確認待ち（PR #1）。
 
+## リリース準備（2026-11-27 クロ記）
+
+### 署名済みAAB（1回目・広告なし版）
+
+- ファイル: `build/app/outputs/bundle/release/app-release.aab`（84.6MB）。クロの作業環境は消えるため、しゅん にチャットで送付済み。手元の保存先を正とする。
+- ビルド日時: 2026-11-27 11:31 UTC（20:31 JST）
+- バージョン: 1.0.0（versionCode 1）。applicationId `jp.amuse.kotobanomori`
+- 元にしたコミット: main `385e651` ＋ 署名設定の追加（Flutter 3.47.7）
+- 広告: なし（`KOTOBA_RELEASE_WITHOUT_ADS=true` でビルド。リリース版は広告ユニットID未設定のため広告を読み込まない）。AdMob の本番ID取得後に、広告ありで作り直す。
+- 署名確認済み（jarsigner で verified）。証明書 SHA-256: `DF:E0:36:15:00:DE:6C:91:F6:1F:9C:8B:13:A5:5C:6F:66:71:7F:4D:AA:51:93:E8:B4:1A:EF:0B:84:4B:66:A4`
+
+### アップロード鍵（キーストア）
+
+- ファイル名 `kotoba-no-mori-upload.jks`、エイリアス `upload`、RSA 2048、有効期限 2056-11-19、証明書の名前 `CN=Amuse Kobo, O=Amuse Kobo, C=JP`。
+- キーストアとパスワードはリポジトリに置かない（公開リポジトリのため）。キーストアは しゅん に送付済みで、しゅん が保管する。パスワードは しゅん が管理（ここには書かない）。
+- なくすと次回の更新に署名できない。Play アプリ署名を使っていれば、Play Console から「アップロード鍵のリセット」を依頼できる。
+
+### 次回ビルドのしかた（Claude Code / PC）
+
+署名情報は環境変数で渡す（ファイルに書かない）:
+
+```
+export KOTOBA_UPLOAD_STORE_FILE=/保管場所/kotoba-no-mori-upload.jks
+export KOTOBA_UPLOAD_STORE_PASSWORD=（しゅん に確認）
+export ADMOB_APP_ID=ca-app-pub-…~…            # 広告ありの場合
+flutter build appbundle --release --dart-define=ADMOB_REWARDED_ANDROID_ID=ca-app-pub-…/…
+# 広告なしのテスト版だけは ADMOB_APP_ID の代わりに KOTOBA_RELEASE_WITHOUT_ADS=true
+```
+
+- 更新のたびに pubspec.yaml の `version:` の `+` 以降（versionCode）を1つ上げる（同じ番号は Play に上げられない）。
+- 署名情報がないとリリースビルドは止まる（署名なしのAABを誤って作らないため）。
+
+### Play Console へのアップロード手順（むせ・しゅん）
+
+1. Play Console →「アプリを作成」: アプリ名「ことばの森」、言語 日本語、アプリ／ゲーム＝ゲーム、無料。
+2. 「テスト」→「クローズド テスト」→ トラックを作成 → テスター（メールアドレスのリスト、12人以上）を登録。
+3. 「新しいリリースを作成」→ 「Play アプリ署名」は Google 管理（既定）のまま進める → `app-release.aab` をアップロード → リリースノートを書く → 審査に送信。
+4. 「アプリのコンテンツ」で必須項目を入力:
+   - プライバシーポリシー: https://yamashun200510-design.github.io/kotoba-no-mori/privacy.html
+   - 広告: このAABは広告を表示しない（広告ありで作り直したら「含む」に変更）。
+   - 広告ID: AdMob SDK の都合で AD_ID 権限が入っているため、広告IDの申告が求められる。用途を正しく申告する。
+   - データセーフティ、コンテンツのレーティング（質問票）、ターゲット年齢層。子ども向けにする場合はファミリー ポリシーと広告の制限がかかるので、むせ・しゅん で決めてから入力。
+5. ストアの掲載情報: 短い説明・詳しい説明・アイコン（512×512）・フィーチャーグラフィック（1024×500）・スクリーンショット（2枚以上）。
+6. クローズドテストを 12人以上 × 14日間 続けたあと、製品版の申請ができる。
+
+### 未決・注意
+
+- AdMob 本番アプリID・報酬広告ユニットIDの取得（製品版の前に、広告ありで作り直す）。
+- 署名設定の変更は作業ブランチ `claude/previous-pc-work-u16z5i` にあり、main への反映は しゅん の確認待ち。
+
 ## 次にやること
 
 1. ~~lib/main.dart の push と flutter test / analyze の通過確認（Claude Code）~~ 完了。`claude/previous-pc-work-u16z5i` を main に取り込む（しゅん確認後）
-2. リリース署名（signingConfig）の設定（Play 提出前）
+2. ~~リリース署名（signingConfig）の設定（Play 提出前）~~ 完了（上の「リリース準備」）。1回目の署名済みAAB（広告なし）作成済み
 3. AdMob 本番アプリID・広告ユニットIDの取得と設定（Play 提出前）
 4. Play Console にアプリ登録 → クローズドテスト（テスター12人×14日）
 

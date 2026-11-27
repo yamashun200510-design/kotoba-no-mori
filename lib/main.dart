@@ -2428,9 +2428,11 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
         if (fitTile < tile) tile = fitTile;
         var omitted = 0;
         var summarize = false;
+        // Fixed line height for the summary, independent of text scale, so
+        // the row budget below matches what is actually laid out.
+        const summaryHeight = 24.0;
         if (tile < minTile) {
           tile = minTile;
-          const summaryHeight = 24.0;
           final rowHeight = minTile * 1.08 + gap;
           if (avail >= summaryHeight + rowHeight) {
             final rowsFit = ((avail - summaryHeight) / rowHeight).floor();
@@ -2446,39 +2448,48 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
         final boardWidth = tile * length + tileGap * (length - 1);
         Widget row(int index) {
           final guess = currentGuesses[index];
+          // Each row is exactly one tile tall: the row number scales down
+          // with the tiles instead of stretching the row under large text.
           return Padding(
             padding: const EdgeInsets.only(bottom: gap),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 26,
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: SizedBox(
-                      width: boardWidth,
-                      child: LetterBoard(
-                        key: ValueKey(
-                          dailyMode
-                              ? 'today-${progress.today.date}-$index'
-                              : '${progress.solved}-$index',
-                        ),
-                        text: guess,
-                        length: length,
-                        marks: judge(currentWord.text, guess),
-                        compact: true,
-                        dense: true,
-                        reveal: animatedGuess == index && revealing,
-                        onRevealComplete: finishReveal,
+            child: SizedBox(
+              height: tile * 1.08,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 26,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Center(
+                      child: SizedBox(
+                        width: boardWidth,
+                        child: LetterBoard(
+                          key: ValueKey(
+                            dailyMode
+                                ? 'today-${progress.today.date}-$index'
+                                : '${progress.solved}-$index',
+                          ),
+                          text: guess,
+                          length: length,
+                          marks: judge(currentWord.text, guess),
+                          compact: true,
+                          dense: true,
+                          reveal: animatedGuess == index && revealing,
+                          onRevealComplete: finishReveal,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -2489,13 +2500,17 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (summarize)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: gap),
-                  child: Text(
-                    'まえの $omitted 回は、ここでは省略しています',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF4C6547),
+                SizedBox(
+                  height: summaryHeight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'まえの $omitted 回は、ここでは省略しています',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF4C6547),
+                      ),
                     ),
                   ),
                 ),

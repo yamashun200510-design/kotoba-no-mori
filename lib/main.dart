@@ -201,7 +201,6 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
   final List<({String page, bool daily, String draft})> previousPages = [];
   final input = TextEditingController();
   bool restoringInput = false;
-  final history = ScrollController();
   Future<void> writes = Future.value();
   String feedback = '';
   bool revealing = false;
@@ -338,7 +337,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
         go('文字数をえらぶ');
         return;
       }
-      if ([3, 4].contains(progress.word.text.length)) {
+      if ([3, 4, 5].contains(progress.word.text.length)) {
         progress.selectMode(progress.word.text.length);
         save();
       }
@@ -385,7 +384,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
   List<Widget> modePicker() => [
     heading('何文字であそびますか？'),
     const Text('途中の答えは、文字数ごとに残ります。'),
-    for (final length in [3, 4])
+    for (final length in [3, 4, 5])
       panel([
         button('$length文字であそぶ', () => chooseLength(length), primary: true),
         Text(
@@ -1085,7 +1084,6 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     input.removeListener(refreshInput);
     input.dispose();
-    history.dispose();
     forestScroll.dispose();
     forestViewTransform.dispose();
     shopPages.dispose();
@@ -1145,13 +1143,6 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
             behavior: SnackBarBehavior.floating,
           ),
         );
-      });
-    }
-    if (target == 'パズル') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && history.hasClients) {
-          history.jumpTo(history.position.maxScrollExtent);
-        }
       });
     }
   }
@@ -1224,11 +1215,6 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
     // The win cue includes a final coin-like bell: one cue, no stacked rewards.
     if (!currentWon) ForestAudio.play('wrong', progress.soundEnabled);
     if (invitation == null) save();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && history.hasClients) {
-        history.jumpTo(history.position.maxScrollExtent);
-      }
-    });
   }
 
   void openToday() {
@@ -2181,11 +2167,6 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
           if (mounted) setState(() => celebrating = false);
         });
       }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && history.hasClients) {
-          history.jumpTo(history.position.maxScrollExtent);
-        }
-      });
     });
   }
 
@@ -2418,6 +2399,114 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
     );
   }
 
+  /// Guess history compressed into the play screen: the screen itself never
+  /// scrolls. Rows shrink as guesses accumulate, and in very long games the
+  /// oldest rows are summarized in one line so the newest guesses —
+  /// including the one being revealed — always stay visible.
+  Widget historyArea({required bool tight}) {
+    if (currentGuesses.isEmpty) {
+      return const Center(
+        key: ValueKey('history-area'),
+        child: Text(
+          'どんなことばかな？',
+          style: TextStyle(fontSize: 18, color: Color(0xFF4C6547)),
+        ),
+      );
+    }
+    final length = currentWord.text.length;
+    return LayoutBuilder(
+      key: const ValueKey('history-area'),
+      builder: (context, box) {
+        const gap = 4.0;
+        const naturalTile = 48.0;
+        const minTile = 22.0;
+        final tileGap = length > 4 ? 5.0 : 9.0;
+        final count = currentGuesses.length;
+        final avail = box.maxHeight - (tight ? 4 : 12) - gap;
+        var tile = naturalTile;
+        final fitTile = (avail / count - gap) / 1.08;
+        if (fitTile < tile) tile = fitTile;
+        var omitted = 0;
+        var summarize = false;
+        if (tile < minTile) {
+          tile = minTile;
+          const summaryHeight = 24.0;
+          final rowHeight = minTile * 1.08 + gap;
+          if (avail >= summaryHeight + rowHeight) {
+            final rowsFit = ((avail - summaryHeight) / rowHeight).floor();
+            omitted = count - rowsFit;
+            if (omitted < 0) omitted = 0;
+            if (omitted > count - 1) omitted = count - 1;
+            summarize = omitted > 0;
+          } else {
+            // No room even for the summary line: keep only the newest row.
+            omitted = count - 1;
+          }
+        }
+        final boardWidth = tile * length + tileGap * (length - 1);
+        Widget row(int index) {
+          final guess = currentGuesses[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: gap),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 26,
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: SizedBox(
+                      width: boardWidth,
+                      child: LetterBoard(
+                        key: ValueKey(
+                          dailyMode
+                              ? 'today-${progress.today.date}-$index'
+                              : '${progress.solved}-$index',
+                        ),
+                        text: guess,
+                        length: length,
+                        marks: judge(currentWord.text, guess),
+                        compact: true,
+                        dense: true,
+                        reveal: animatedGuess == index && revealing,
+                        onRevealComplete: finishReveal,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(12, tight ? 4 : 12, 12, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (summarize)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: gap),
+                  child: Text(
+                    'まえの $omitted 回は、ここでは省略しています',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF4C6547),
+                    ),
+                  ),
+                ),
+              for (var i = omitted; i < count; i++) row(i),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget puzzleContents(
     BuildContext context, {
     double? keyboardViewportHeight,
@@ -2492,70 +2581,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                   ),
                 ),
               ],
-              Expanded(
-                child: CustomScrollView(
-                  key: const ValueKey('history-area'),
-                  controller: history,
-                  slivers: [
-                    if (currentGuesses.isEmpty)
-                      const SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Center(
-                          child: Text(
-                            'どんなことばかな？',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Color(0xFF4C6547),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(12, tight ? 4 : 12, 12, 4),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final guess = currentGuesses[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 26,
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: LetterBoard(
-                                      key: ValueKey(
-                                        dailyMode
-                                            ? 'today-${progress.today.date}-$index'
-                                            : '${progress.solved}-$index',
-                                      ),
-                                      text: guess,
-                                      length: length,
-                                      marks: judge(currentWord.text, guess),
-                                      compact: true,
-                                      dense: true,
-                                      reveal:
-                                          animatedGuess == index && revealing,
-                                      onRevealComplete: finishReveal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }, childCount: currentGuesses.length),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              Expanded(child: historyArea(tight: tight)),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.fromLTRB(
@@ -2846,7 +2872,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                       '平均・連続正解は、記録機能の追加後から。通常と「今日のことば」を含みます。',
                       style: TextStyle(fontSize: 17),
                     ),
-                    for (final length in [3, 4])
+                    for (final length in [3, 4, 5])
                       panel([
                         heading('$length文字の記録'),
                         const SizedBox(height: 8),

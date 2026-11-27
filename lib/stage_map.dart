@@ -93,19 +93,25 @@ class _ForestStageMapState extends State<ForestStageMap>
   bool appActive = true;
   late int lastFrontier;
 
-  // Anchors follow the visible centerline in cartoon-map.png (bottom to top).
-  // Stage 5 sits on the bridge, then the path bends right toward the house.
+  // Node centers on the visible centerline of cartoon-map.png (979x1606),
+  // measured from the artwork itself (2026-11-27). Stages 1 and 7 are the
+  // user-confirmed anchors and stay fixed; the rest sit at equal arc-length
+  // intervals along the centerline: stages 2-6 split the 1->7 stretch
+  // (about 1303 px) into six, and stages 8-10 split the 7->trail-top
+  // stretch (about 599 px) into three. One shared interval cannot fit:
+  // the 1->7 interval (about 217 px) would push stage 10 about 53 px past
+  // the end of the trail. Stage 5 sits on the bridge deck.
   static const _path = <Offset>[
     Offset(.51, .94),
-    Offset(.55, .83),
-    Offset(.45, .72),
-    Offset(.42, .62),
-    Offset(.62, .50),
-    Offset(.72, .42),
+    Offset(.467, .817),
+    Offset(.580, .710),
+    Offset(.602, .602),
+    Offset(.555, .519),
+    Offset(.620, .428),
     Offset(.69, .33),
-    Offset(.67, .24),
-    Offset(.64, .15),
-    Offset(.61, .07),
+    Offset(.602, .229),
+    Offset(.717, .140),
+    Offset(.596, .064),
   ];
   static double mapHeightFor(double width) => width * mapAspect;
   static Offset point(int id, double width) {

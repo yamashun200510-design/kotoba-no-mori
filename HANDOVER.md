@@ -15,9 +15,19 @@
 - **lib/main.dart の最終版がまだリモートにありません**（むせの道具ではファイルサイズ上限で push 不可でした）。最終版は しゅん にファイルで渡し済みです。このファイルを受け取ったら lib/main.dart に上書きして commit & push し、flutter test を回してください。今のままだと widget_test が1件落ちる中間状態です。
 - Web版（index.html）はブラウザ体験版として残します。消さないでください。
 
+## 現状（2026-11-27 Claude Code 記）
+
+- lib/main.dart の最終版を push 済み（ブランチ `claude/previous-pc-work-u16z5i`）。
+- Flutter 3.47.7 で `flutter analyze` 問題なし、`flutter test` 全127件成功。
+- 直したこと:
+  - テストが古いボタン名「3文字・4文字をえらぶ」を探していたので「3文字・4文字・5文字をえらぶ」に更新。
+  - 文字サイズ「大きめ」の小画面（320×568 / 320×640）でプレイ画面がはみ出していた問題を修正（履歴の行の高さを固定）。
+  - ショップのスワイプ、正解お祝いのテストのタイミング・位置を修正（アプリの動作は変更なし）。
+- main への取り込みは しゅん の確認待ち。
+
 ## 次にやること
 
-1. lib/main.dart の push と flutter test / analyze の通過確認（Claude Code）
+1. ~~lib/main.dart の push と flutter test / analyze の通過確認（Claude Code）~~ 完了。`claude/previous-pc-work-u16z5i` を main に取り込む（しゅん確認後）
 2. リリース署名（signingConfig）の設定（Play 提出前）
 3. AdMob 本番アプリID・広告ユニットIDの取得と設定（Play 提出前）
 4. Play Console にアプリ登録 → クローズドテスト（テスター12人×14日）

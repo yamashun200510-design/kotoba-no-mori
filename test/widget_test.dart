@@ -91,6 +91,10 @@ void main() {
     await tester.pumpAndSettle();
     var page = tester.widget<PageView>(carousel);
     expect(page.controller!.page, closeTo(1, .01));
+    // Bring the card itself on screen: after revealing the arrow buttons the
+    // carousel's center sits under the app bar, where a drag never reaches it.
+    await tester.ensureVisible(carousel);
+    await tester.pumpAndSettle();
     await tester.drag(carousel, const Offset(-400, 0));
     await tester.pumpAndSettle();
     page = tester.widget<PageView>(carousel);
@@ -535,8 +539,13 @@ void main() {
     await typeWord(tester, 'さくら');
     await tester.tap(answer());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 800));
-    await tester.pump();
+    // The reveal ticker starts on the frame after the answer, and the petals
+    // follow on a post-frame callback, so wait for them within a short bound
+    // instead of at one exact frame.
+    for (var i = 0; i < 12; i++) {
+      if (find.byType(SuccessPetals).evaluate().isNotEmpty) break;
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     expect(find.byType(SuccessPetals), findsOneWidget);
     expect(find.text('つぎの問題'), findsNothing);
     await tester.pump(const Duration(milliseconds: 1400));

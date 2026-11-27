@@ -96,13 +96,13 @@ class _RabbitSendoffState extends State<RabbitSendoff>
                                     children: [
                                       ConstrainedBox(
                                         constraints: BoxConstraints(
-                                          maxWidth: bounds.maxWidth * .88,
+                                          maxWidth: bounds.maxWidth * .72,
                                         ),
                                         child: DecoratedBox(
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFFFF8E5),
                                             borderRadius: BorderRadius.circular(
-                                              24,
+                                              18,
                                             ),
                                             border: Border.all(
                                               color: const Color(0xFF9CAD83),
@@ -111,15 +111,15 @@ class _RabbitSendoffState extends State<RabbitSendoff>
                                           ),
                                           child: const Padding(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 12,
+                                              horizontal: 14,
+                                              vertical: 7,
                                             ),
                                             child: Text(
                                               'いってらっしゃい！',
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 fontFamily: 'ZenMaru',
-                                                fontSize: 22,
+                                                fontSize: 17,
                                                 fontWeight: FontWeight.w700,
                                                 decoration: TextDecoration.none,
                                                 color: Color(0xFF35634C),
@@ -129,7 +129,7 @@ class _RabbitSendoffState extends State<RabbitSendoff>
                                         ),
                                       ),
                                       const CustomPaint(
-                                        size: Size(22, 10),
+                                        size: Size(16, 8),
                                         painter: _BubbleTail(),
                                       ),
                                       RabbitMascot(

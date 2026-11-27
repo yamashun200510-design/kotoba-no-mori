@@ -453,14 +453,14 @@ void main() {
           final area = tester.getRect(
             find.byKey(const ValueKey('history-area')),
           );
-          // Scroll to the newest history while the input remains fixed.
-          await tester.scrollUntilVisible(
-            find.byKey(ValueKey('$wordIndex-29')),
-            60,
-            scrollable: find.descendant(
+          // History is compressed into the screen: it never scrolls, and
+          // the newest guess stays visible inside the history area.
+          expect(
+            find.descendant(
               of: find.byKey(const ValueKey('history-area')),
               matching: find.byType(Scrollable),
             ),
+            findsNothing,
           );
           await tester.pumpAndSettle();
           final latest = tester.getRect(find.byKey(ValueKey('$wordIndex-29')));

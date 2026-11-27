@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same cream as the app's background, so startup never flashes white. -->
+    <color name="splash_background">#FAF6EA</color>
+    <color name="splash_icon_background">#244F3E</color>
+</resources>

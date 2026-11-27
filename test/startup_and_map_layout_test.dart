@@ -1,0 +1,81 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kotoba_no_mori/game.dart';
+import 'package:kotoba_no_mori/loading_screen.dart';
+import 'package:kotoba_no_mori/stage_journey.dart';
+import 'package:kotoba_no_mori/main.dart';
+import 'app_launch.dart';
+
+void main() {
+  testWidgets('ロード画面にタイトルと「よみこみ中」を表示する', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: ForestLoadingScreen()));
+    expect(find.text('ことばの森'), findsOneWidget);
+    expect(find.text('よみこみ中…'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('起動直後はロード画面が出て、読み込み後に消える', (tester) async {
+    addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
+    SharedPreferences.setMockInitialValues({
+      'forest_progress': Progress(reduceMotion: true).encode(),
+    });
+    await tester.pumpWidget(const ForestApp());
+    expect(find.byKey(const ValueKey('loading-screen')), findsOneWidget);
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byKey(const ValueKey('loading-screen')), findsNothing);
+    expect(find.byKey(const ValueKey('title-start')), findsOneWidget);
+  });
+
+  for (final size in const [Size(320, 640), Size(360, 780)]) {
+    for (final scale in const [1.0, 1.3]) {
+      testWidgets('ステージマップの見出しが$size・文字$scale倍でも1行に収まる', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.view.reset);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
+        final progress = Progress(reduceMotion: true)
+          ..loginDate = Progress.dayKey(DateTime.now())
+          ..loginDay = 1;
+        SharedPreferences.setMockInitialValues({
+          'forest_progress': progress.encode(),
+        });
+        await tester.pumpWidget(const ForestApp());
+        await enterPastTitle(tester);
+        await tester.pump(const Duration(seconds: 1));
+        await tester.tap(find.text('あそぶ'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 900));
+
+        // Single-line labels: their height stays one line of text.
+        for (final key in ['stage-progress', 'stage-star-help']) {
+          final box = tester.getRect(find.byKey(ValueKey(key)));
+          expect(box.height, lessThan(56), reason: key);
+          expect(box.right, lessThanOrEqualTo(size.width), reason: key);
+        }
+        // Every stage marker stays inside the map horizontally.
+        for (var id = 1; id <= forestStages.length; id++) {
+          final marker = tester.getRect(find.byKey(ValueKey('stage-$id')));
+          expect(marker.left, greaterThanOrEqualTo(0), reason: 'stage $id');
+          expect(
+            marker.right,
+            lessThanOrEqualTo(size.width),
+            reason: 'stage $id',
+          );
+        }
+        // Neighbouring markers near the top no longer overlap.
+        final eight = tester.getRect(find.byKey(const ValueKey('stage-8')));
+        final nine = tester.getRect(find.byKey(const ValueKey('stage-9')));
+        final ten = tester.getRect(find.byKey(const ValueKey('stage-10')));
+        expect(eight.overlaps(nine.deflate(1)), false);
+        expect(nine.overlaps(ten.deflate(1)), false);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+}

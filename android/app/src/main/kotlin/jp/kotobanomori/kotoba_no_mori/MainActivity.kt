@@ -36,10 +36,19 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun playSound(name: String): Boolean {
+        // Effects play on the media stream like the BGM, so the media volume
+        // and the in-app sound switch decide. (They used to be skipped in
+        // vibrate/silent ringer mode, which muted every effect on phones kept
+        // in manner mode while the BGM still played.)
         val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        if (!foreground || audio.ringerMode != AudioManager.RINGER_MODE_NORMAL ||
-            audio.getStreamVolume(AudioManager.STREAM_MUSIC) == 0) return false
-        val id = sounds[name] ?: return false
+        if (!foreground || audio.getStreamVolume(AudioManager.STREAM_MUSIC) == 0) {
+            Log.d("KotobaSound", "$name skipped: foreground=$foreground media volume=0")
+            return false
+        }
+        val id = sounds[name] ?: run {
+            Log.w("KotobaSound", "$name is not loaded")
+            return false
+        }
         if (!ready.contains(id)) {
             pending = name
             return false
@@ -181,6 +190,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // While the game is open, the hardware volume keys change the media
+        // volume used by the BGM and effects, not the ringtone volume.
+        volumeControlStream = AudioManager.STREAM_MUSIC
         val player = SoundPool.Builder().setMaxStreams(1).setAudioAttributes(
             AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build()

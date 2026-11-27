@@ -26,6 +26,7 @@ import 'invitation_panel.dart';
 import 'fantasy_backdrop.dart';
 import 'stage_journey.dart';
 import 'stage_map.dart';
+import 'loading_screen.dart';
 
 const green = forestGreen;
 const cream = Color(0xFFFAF6EA);
@@ -194,6 +195,10 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
   StageJourney journey = StageJourney();
   SharedPreferences? prefs;
   bool ready = false;
+  // The loading screen stays until progress is read and the large artwork is
+  // decoded; it then fades out and is removed so nothing keeps animating.
+  bool artWarm = !warmArtOnStartup, loadingOverlay = true;
+  bool get loading => !(ready && artWarm);
   bool titleActive = true, showingWelcome = false;
   bool petaling = false; // petal wipe between title and home is playing
   String? storageError;
@@ -238,6 +243,13 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     input.addListener(refreshInput);
     load();
+    if (!artWarm) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await warmForestArt(context);
+        if (mounted) setState(() => artWarm = true);
+      });
+    }
   }
 
   bool get adCoinRewardClaimed =>
@@ -3805,20 +3817,24 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                 MediaQuery.sizeOf(context).width < 360 ||
                     MediaQuery.textScalerOf(context).scale(1) > 1.4
                 ? const SizedBox.shrink()
-                : Text(
-                    page == 'ホーム'
-                        ? ''
-                        : page == 'パズル'
-                        ? 'パズル'
-                        : page == 'わたしの森'
-                        ? (forestFullscreen ? 'わたしの森' : '森')
-                        : page,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                // Shrink a long title (e.g. ステージマップ) to fit between the
+                // back button and the coins rather than cutting it off.
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      page == 'ホーム'
+                          ? ''
+                          : page == 'パズル'
+                          ? 'パズル'
+                          : page == 'わたしの森'
+                          ? (forestFullscreen ? 'わたしの森' : '森')
+                          : page,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
             actions: [
@@ -3829,7 +3845,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
             ],
           ),
           body: !ready
-              ? const Center(child: CircularProgressIndicator())
+              ? const SizedBox.expand()
               : SafeArea(
                   child: Center(
                     child: ConstrainedBox(
@@ -4344,6 +4360,35 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                 key: const ValueKey('petal-wipe'),
                 onCovered: onPetalsCovered,
                 onDone: onPetalsDone,
+              ),
+            ),
+          if (loadingOverlay &&
+              !loading &&
+              MediaQuery.disableAnimationsOf(context))
+            Builder(
+              builder: (_) {
+                // Without animations there is no fade to wait for.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => loadingOverlay = false);
+                });
+                return const SizedBox.shrink();
+              },
+            )
+          else if (loadingOverlay)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !loading,
+                child: AnimatedOpacity(
+                  opacity: loading ? 1 : 0,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                  onEnd: () {
+                    if (!loading && mounted) {
+                      setState(() => loadingOverlay = false);
+                    }
+                  },
+                  child: const ForestLoadingScreen(),
+                ),
               ),
             ),
         ],

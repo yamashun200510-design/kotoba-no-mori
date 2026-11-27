@@ -217,8 +217,8 @@ class _ForestStageMapState extends State<ForestStageMap>
         child: Row(
           children: [
             RabbitMascot(
-              width: 48,
-              height: 64,
+              width: 40,
+              height: 54,
               animateIdle: false,
               mood: widget.journey.cleared > 0
                   ? RabbitMood.happy
@@ -230,28 +230,66 @@ class _ForestStageMapState extends State<ForestStageMap>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '花咲く小道',
-                    style: TextStyle(
-                      fontFamily: 'ZenMaru',
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF28543C),
+                  // Each line shrinks to fit instead of wrapping, so the card
+                  // keeps its height on narrow screens and with large text.
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '花咲く小道',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: 'ZenMaru',
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF28543C),
+                      ),
                     ),
                   ),
-                  Text(
-                    '${widget.journey.cleared} / ${forestStages.length} ステージをクリア',
-                    style: const TextStyle(fontSize: 17, height: 1.2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      MediaQuery.sizeOf(context).width < 360
+                          ? '${widget.journey.cleared} / ${forestStages.length} クリア'
+                          : '${widget.journey.cleared} / ${forestStages.length} ステージをクリア',
+                      key: const ValueKey('stage-progress'),
+                      maxLines: 1,
+                      style: const TextStyle(fontSize: 17, height: 1.2),
+                    ),
                   ),
                 ],
               ),
             ),
-            TextButton(
-              onPressed: explain,
-              child: const Text(
-                '星の\n見かた',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+            const SizedBox(width: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 112),
+              child: TextButton(
+                key: const ValueKey('stage-star-help'),
+                onPressed: explain,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: const Size(48, 48),
+                ),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        size: 20,
+                        color: Color(0xFFE0A526),
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        '星の見かた',
+                        maxLines: 1,
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -261,6 +299,14 @@ class _ForestStageMapState extends State<ForestStageMap>
         child: LayoutBuilder(
           builder: (context, bounds) {
             final mapHeight = mapHeightFor(bounds.maxWidth);
+            // The map shrinks with the screen, so the markers shrink with it:
+            // otherwise stages 8–10 near the top overlap on narrow phones.
+            final markerScale = (bounds.maxWidth / 400).clamp(.82, 1.0);
+            double markerLeft(int id) =>
+                (point(id, bounds.maxWidth).dx - markerWidth / 2).clamp(
+                  0.0,
+                  bounds.maxWidth - markerWidth,
+                );
             return SingleChildScrollView(
               key: const ValueKey('stage-map-scroll'),
               controller: scroll,
@@ -315,23 +361,24 @@ class _ForestStageMapState extends State<ForestStageMap>
                         ),
                       for (final stage in forestStages)
                         Positioned(
-                          left:
-                              point(stage.id, bounds.maxWidth).dx -
-                              markerWidth / 2,
+                          left: markerLeft(stage.id),
                           top: point(stage.id, bounds.maxWidth).dy - 32,
                           width: markerWidth,
                           height: markerHeight,
-                          child: _StageButton(
-                            stage: stage,
-                            stars: widget.journey.stars[stage.id] ?? 0,
-                            current: stage.id == widget.journey.frontier,
-                            unlocked: widget.journey.unlocked(stage.id),
-                            animateStars:
-                                stage.id ==
-                                (widget.journey.cleared == forestStages.length
-                                    ? forestStages.length
-                                    : widget.journey.frontier - 1),
-                            onPressed: () => widget.onSelect(stage.id),
+                          child: Transform.scale(
+                            scale: markerScale,
+                            child: _StageButton(
+                              stage: stage,
+                              stars: widget.journey.stars[stage.id] ?? 0,
+                              current: stage.id == widget.journey.frontier,
+                              unlocked: widget.journey.unlocked(stage.id),
+                              animateStars:
+                                  stage.id ==
+                                  (widget.journey.cleared == forestStages.length
+                                      ? forestStages.length
+                                      : widget.journey.frontier - 1),
+                              onPressed: () => widget.onSelect(stage.id),
+                            ),
                           ),
                         ),
                     ],
@@ -351,7 +398,10 @@ class _ForestStageMapState extends State<ForestStageMap>
             style: OutlinedButton.styleFrom(
               backgroundColor: const Color(0xF5FFF9E7),
             ),
-            child: const Text('3文字・4文字・5文字をえらぶ'),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('3文字・4文字・5文字をえらぶ', maxLines: 1),
+            ),
           ),
         ),
       ),

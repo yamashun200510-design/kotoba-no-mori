@@ -5,7 +5,7 @@ Inputs:
   - assets/branding/app-icon.png (the app icon artwork)
   - assets/art/home-glade.png (in-app backdrop, for the feature graphic)
   - raw 1080x2160 app screens in a folder (default build/store_raw/), named
-    puzzle.png, win.png, modes.png, map.png. They were captured from
+    puzzle.png, win.png, modes.png, home.png, map.png. They were captured from
     the real app (Linux desktop build at 3x scale, see store/play/README.md).
 
 Run:  python3 tool/store_assets.py [raw_screens_dir]
@@ -30,6 +30,7 @@ SCREENS = [
     ("puzzle", "ひらがなの\nことば当て", "文字を大きくする設定もあります"),
     ("win", "正解すると\n森が育つ", "毎日すこしずつ、にぎやかに"),
     ("modes", "3・4・5文字から\nえらべる", "全800問・何度でもあそべます"),
+    ("home", "時間制限なし\n自分のペースで", "1日1問の「今日のことば」も"),
     ("map", "花咲く小道を\nすすもう", "ステージをクリアして星を集めます"),
 ]
 

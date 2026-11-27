@@ -210,9 +210,12 @@ void main() {
     );
     await tester.tap(find.text('ホーム'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('わたしの森'), 150);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('home-menu-わたしの森')),
+      150,
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('わたしの森'));
+    await tester.tap(find.byKey(const ValueKey('home-menu-わたしの森')));
     await tester.pumpAndSettle();
     final shopHouse = find.byKey(const ValueKey('forest-shop-house'));
     await tester.drag(find.byType(ListView).last, const Offset(0, -260));
@@ -241,8 +244,8 @@ void main() {
     await enterPastTitle(tester);
     await tester.pumpAndSettle();
     expect(tester.widget<CoinBadge>(find.byType(CoinBadge)).coins, 50);
-    await tester.ensureVisible(find.text('わたしの森'));
-    await tester.tap(find.text('わたしの森'));
+    await tester.ensureVisible(find.byKey(const ValueKey('home-menu-わたしの森')));
+    await tester.tap(find.byKey(const ValueKey('home-menu-わたしの森')));
     await tester.pumpAndSettle();
     expect(
       tester.widget<ForestScene>(find.byType(ForestScene)).items,

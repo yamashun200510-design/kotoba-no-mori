@@ -30,7 +30,7 @@ void main() {
     testWidgets('$size のホームで目標と宝箱が見え、森の成長メッセージを重ねない', (tester) async {
       await open(tester, size);
       for (final text in ['あそぶ', '今日のことば', '1日1問', '今日の目標 0/3問 ・ 達成で30コイン']) {
-        final rect = tester.getRect(find.text(text));
+        final rect = tester.getRect(findLabel(text));
         expect(rect.top, greaterThanOrEqualTo(0));
         expect(rect.bottom, lessThanOrEqualTo(size.height - 24));
       }

@@ -48,3 +48,10 @@ Future<void> enterModePickerFromHome(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 700));
 }
+
+/// Finds a label by its text even when it is shown split across lines at
+/// word boundaries (the full text stays as its semantics label).
+Finder findLabel(String text) => find.byWidgetPredicate(
+  (w) => w is Text && (w.data == text || w.semanticsLabel == text),
+  description: 'label "$text"',
+);

@@ -1692,6 +1692,51 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
     );
   }
 
+  /// Japanese text may otherwise wrap after any character (「あそびか／た」).
+  /// Shows [text] on one line when it fits; otherwise [broken], whose line
+  /// breaks sit only between words; then shrinks to fit rather than eliding.
+  Widget fitLabel(
+    String text,
+    TextStyle style, {
+    String? broken,
+    TextAlign textAlign = TextAlign.center,
+    Alignment alignment = Alignment.center,
+  }) => LayoutBuilder(
+    builder: (context, box) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: DefaultTextStyle.of(context).style.merge(style),
+        ),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final shown = painter.width <= box.maxWidth || broken == null
+          ? text
+          : broken;
+      painter.dispose();
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: alignment,
+        child: Text(
+          shown,
+          semanticsLabel: text,
+          softWrap: false,
+          textAlign: textAlign,
+          style: style,
+        ),
+      );
+    },
+  );
+
+  static const _menuLineBreaks = {
+    'わたしの森': 'わたしの\n森',
+    'わたしの記録': 'わたしの\n記録',
+    'あそびかた': 'あそび\nかた',
+    'ことばの招待状': 'ことばの\n招待状',
+  };
+
   Widget homeMenu(String name, Color color, {VoidCallback? onPressed}) {
     final isDailyWord = name.startsWith('今日のことば') || name == '本日はクリア済み';
     final icon = switch (name) {
@@ -1741,6 +1786,7 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            key: ValueKey('home-menu-$name'),
             onTap: homeTransitioning ? null : action,
             borderRadius: BorderRadius.circular(19),
             child: Container(
@@ -1793,12 +1839,9 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              fitLabel(
                                 '今日のことば',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
+                                const TextStyle(
                                   fontFamily: 'ZenMaru',
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
@@ -1806,12 +1849,9 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                                   color: Color(0xFF3D3528),
                                 ),
                               ),
-                              Text(
+                              fitLabel(
                                 name == '本日はクリア済み' ? name : '1日1問',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                   height: 1.1,
@@ -1820,18 +1860,16 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
                               ),
                             ],
                           )
-                        : Text(
+                        : fitLabel(
                             name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            const TextStyle(
                               fontFamily: 'ZenMaru',
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
                               height: 1.12,
                               color: Color(0xFF3D3528),
                             ),
+                            broken: _menuLineBreaks[name],
                           ),
                   ),
                 ],
@@ -1854,15 +1892,20 @@ class _ForestAppState extends State<ForestApp> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          fitLabel(
             progress.dailyBonusGiven
                 ? '今日の目標 3/3問 ・ 30コイン獲得済み'
                 : '今日の目標 ${progress.dailyWords.length}/3問 ・ 達成で30コイン',
-            style: const TextStyle(
+            const TextStyle(
               fontSize: 17,
               height: 1.3,
               color: Color(0xFF604821),
             ),
+            broken: progress.dailyBonusGiven
+                ? '今日の目標 3/3問\n30コイン獲得済み'
+                : '今日の目標 ${progress.dailyWords.length}/3問\n達成で30コイン',
+            textAlign: TextAlign.left,
+            alignment: Alignment.centerLeft,
           ),
         ],
       ),

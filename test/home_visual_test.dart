@@ -37,7 +37,7 @@ void main() {
         'わたしの記録',
         'あそびかた',
       ]) {
-        final button = find.text(text);
+        final button = findLabel(text);
         expect(button, findsOneWidget);
         final bounds = tester.getRect(button);
         expect(bounds.top, greaterThanOrEqualTo(0), reason: text);
@@ -46,7 +46,7 @@ void main() {
       expect(find.text('3文字・4文字・5文字をえらぶ'), findsNothing);
       expect(find.byType(ForestScene), findsNothing);
       expect(find.byType(FantasyBackdrop), findsOneWidget);
-      await tester.tap(find.text('わたしの森'));
+      await tester.tap(findLabel('わたしの森'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<ForestScene>(find.byType(ForestScene)).homePalette,

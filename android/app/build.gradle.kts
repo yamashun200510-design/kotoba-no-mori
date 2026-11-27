@@ -23,8 +23,8 @@ android {
 
     defaultConfig {
         manifestPlaceholders["adMobAppId"] = productionAdMobAppId ?: testAdMobAppId
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "jp.kotobanomori.kotoba_no_mori"
+        // Unique Application ID for the Amuse工房 developer account.
+        applicationId = "jp.amuse.kotobanomori"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

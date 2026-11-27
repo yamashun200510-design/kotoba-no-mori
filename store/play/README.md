@@ -6,7 +6,7 @@
 | `feature-1024x500.png` | 1024×500 PNG | フィーチャー グラフィック |
 | `screenshots/01-puzzle.png` | 1080×2160 PNG | スマートフォンのスクリーンショット1「ひらがなのことば当て」 |
 | `screenshots/02-win.png` | 1080×2160 PNG | 2「正解すると森が育つ」 |
-| `screenshots/03-modes.png` | 1080×2160 PNG | 3「3・4・5文字からえらべる」 |
+| `screenshots/03-modes.png` | 1080×2160 PNG | 3「3・4・5文字からえらべる」（全1,000問） |
 | `screenshots/04-home.png` | 1080×2160 PNG | 4「時間制限なし 自分のペースで」（文字サイズ「大きめ」で撮影） |
 | `screenshots/05-map.png` | 1080×2160 PNG | 5「花咲く小道をすすもう」 |
 

@@ -1,7 +1,8 @@
 part of 'game.dart';
 
 // Curated batch 1. The second field is the expected number of kana tiles,
-// including small kana and long-vowel marks. Five-kana entries are reserved.
+// including small kana and long-vowel marks. Five-kana entries are playable
+// in the 5-letter mode (opened with the Web-edition fusion).
 const additionalWords = <Word>[
   Word.entry('ねずみ', 3, 'どうぶつ', '小さな体に、長いしっぽを持つ動物です。'),
   Word.entry('たぬき', 3, 'どうぶつ', '目のまわりが黒く、日本の昔話にも登場します。'),

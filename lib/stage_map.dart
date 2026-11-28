@@ -2,7 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'press_feedback.dart';
 import 'rabbit_mascot.dart';
+import 'area_scene_painter.dart';
+import 'stage_areas.dart';
 import 'stage_journey.dart';
+import 'stage_layout.dart';
 
 class StageStars extends StatelessWidget {
   final int count;
@@ -81,9 +84,6 @@ class ForestStageMap extends StatefulWidget {
 class _ForestStageMapState extends State<ForestStageMap>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final scroll = ScrollController();
-  // Preserve the source illustration's aspect ratio so road landmarks and
-  // marker coordinates stay registered while scrolling.
-  static const mapAspect = 1606 / 979;
   static const markerWidth = 68.0;
   static const markerHeight = 64.0;
   late final AnimationController ambience = AnimationController(
@@ -93,48 +93,48 @@ class _ForestStageMapState extends State<ForestStageMap>
   bool appActive = true;
   late int lastFrontier;
 
-  // Node centers on the visible centerline of cartoon-map.png (979x1606),
-  // measured from the artwork itself (2026-11-27). Stages 1 and 7 are the
-  // user-confirmed anchors and stay fixed; the rest sit at equal arc-length
-  // intervals along the centerline: stages 2-6 split the 1->7 stretch
-  // (about 1303 px) into six, and stages 8-10 split the 7->trail-top
-  // stretch (about 599 px) into three. One shared interval cannot fit:
-  // the 1->7 interval (about 217 px) would push stage 10 about 53 px past
-  // the end of the trail. Stage 5 sits on the bridge deck.
-  static const _path = <Offset>[
-    Offset(.51, .94),
-    Offset(.467, .817),
-    Offset(.580, .710),
-    Offset(.602, .602),
-    Offset(.555, .519),
-    Offset(.620, .428),
-    Offset(.69, .33),
-    Offset(.602, .229),
-    Offset(.717, .140),
-    Offset(.596, .064),
-  ];
-  static double mapHeightFor(double width) => width * mapAspect;
-  static Offset point(int id, double width) {
-    final f = _path[(id - 1) % _path.length];
-    return Offset(width * f.dx, f.dy * mapHeightFor(width));
+  /// The area shown; it follows the current stage unless the player browses.
+  late ForestArea area;
+  AreaLayout? _layout;
+
+  AreaLayout layoutFor(double width) {
+    final cached = _layout;
+    if (cached != null &&
+        cached.width == width &&
+        cached.nodes.containsKey(area.firstStage)) {
+      return cached;
+    }
+    return _layout = layoutArea(area, width);
   }
 
+  int get areaCleared => [
+    for (var id = area.firstStage; id <= area.lastStage; id++) id,
+  ].where((id) => (widget.journey.stars[id] ?? 0) > 0).length;
+
+  bool canOpen(ForestArea target) => widget.journey.unlocked(target.firstStage);
+
+  void showArea(ForestArea target) {
+    if (target == area || !canOpen(target)) return;
+    setState(() {
+      area = target;
+      _layout = null;
+    });
+    revealFrontier();
+  }
+
+  /// Scrolls so the current stage is comfortably in view (or, in an area
+  /// without it, to the area's start at the bottom).
   void revealFrontier() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !scroll.hasClients) return;
       final width = context.size?.width ?? 0;
       if (width <= 0) return;
-      final centerY = point(widget.journey.frontier, width).dy;
+      final layout = layoutFor(width);
       final viewport = scroll.position.viewportDimension;
-      final halfMarker = markerHeight / 2 + 8;
-      var target = 0.0;
-      if (centerY - halfMarker < 0) {
-        target = centerY - halfMarker;
-      } else if (centerY + halfMarker > viewport) {
-        target = centerY + halfMarker - viewport;
-      }
-      // Only move enough to reveal the current stage. Centering it at all costs
-      // can scroll the map header stage underneath the fixed area card.
+      final frontier = layout.nodes[widget.journey.frontier];
+      final target = frontier == null
+          ? scroll.position.maxScrollExtent
+          : frontier.dy - viewport * .62;
       final safeTarget = target.clamp(0.0, scroll.position.maxScrollExtent);
       if ((scroll.position.pixels - safeTarget).abs() < 1) return;
       scroll.jumpTo(safeTarget);
@@ -145,6 +145,7 @@ class _ForestStageMapState extends State<ForestStageMap>
   void initState() {
     super.initState();
     lastFrontier = widget.journey.frontier;
+    area = areaOfStage(lastFrontier);
     WidgetsBinding.instance.addObserver(this);
     revealFrontier();
   }
@@ -152,6 +153,7 @@ class _ForestStageMapState extends State<ForestStageMap>
   void syncAmbience() {
     final enabled =
         appActive &&
+        area.number == 1 &&
         !widget.reduceMotion &&
         !MediaQuery.disableAnimationsOf(context) &&
         TickerMode.valuesOf(context).enabled;
@@ -174,6 +176,11 @@ class _ForestStageMapState extends State<ForestStageMap>
     syncAmbience();
     if (lastFrontier != widget.journey.frontier) {
       lastFrontier = widget.journey.frontier;
+      final next = areaOfStage(lastFrontier);
+      if (next != area) {
+        area = next;
+        _layout = null;
+      }
       revealFrontier();
     }
   }
@@ -209,210 +216,310 @@ class _ForestStageMapState extends State<ForestStageMap>
       ],
     ),
   );
+
+  Widget areaArrow({required bool next}) {
+    final index = area.number - 1 + (next ? 1 : -1);
+    final target = index >= 0 && index < forestAreas.length
+        ? forestAreas[index]
+        : null;
+    final enabled = target != null && canOpen(target);
+    return IconButton(
+      key: ValueKey(next ? 'area-next' : 'area-previous'),
+      tooltip: target == null
+          ? null
+          : enabled
+          ? '${next ? '次' : '前'}のエリア「${target.name}」へ'
+          : '前のエリアをすべてクリアすると進めます',
+      onPressed: enabled ? () => showArea(target) : null,
+      icon: Icon(next ? Icons.chevron_right : Icons.chevron_left, size: 30),
+      color: const Color(0xFF28543C),
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      padding: EdgeInsets.zero,
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Container(
-        margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0xF5FFF9E7),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFD6BD86)),
-        ),
-        child: Row(
-          children: [
-            RabbitMascot(
-              width: 40,
-              height: 54,
-              animateIdle: false,
-              mood: widget.journey.cleared > 0
-                  ? RabbitMood.happy
-                  : RabbitMood.greeting,
-              event: widget.journey.frontier,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final narrow = MediaQuery.sizeOf(context).width < 360;
+    final cleared = areaCleared;
+    final allCleared = cleared == stagesPerArea;
+    final nextArea = area.number < forestAreas.length
+        ? forestAreas[area.number]
+        : null;
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          padding: const EdgeInsets.fromLTRB(8, 2, 6, 2),
+          decoration: BoxDecoration(
+            color: const Color(0xF5FFF9E7),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFD6BD86)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  // Each line shrinks to fit instead of wrapping, so the card
-                  // keeps its height on narrow screens and with large text.
-                  const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '花咲く小道',
-                      maxLines: 1,
-                      style: TextStyle(
-                        fontFamily: 'ZenMaru',
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF28543C),
+                  RabbitMascot(
+                    width: 34,
+                    height: 44,
+                    animateIdle: false,
+                    mood: widget.journey.cleared > 0
+                        ? RabbitMood.happy
+                        : RabbitMood.greeting,
+                    event: widget.journey.frontier,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        area.name,
+                        key: const ValueKey('stage-area-name'),
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontFamily: 'ZenMaru',
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF28543C),
+                        ),
                       ),
                     ),
                   ),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      MediaQuery.sizeOf(context).width < 360
-                          ? '${widget.journey.cleared} / ${forestStages.length} クリア'
-                          : '${widget.journey.cleared} / ${forestStages.length} ステージをクリア',
-                      key: const ValueKey('stage-progress'),
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 17, height: 1.2),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 112),
+                    child: TextButton(
+                      key: const ValueKey('stage-star-help'),
+                      onPressed: explain,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: const Size(48, 44),
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              size: 20,
+                              color: Color(0xFFE0A526),
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              '星の見かた',
+                              maxLines: 1,
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 112),
-              child: TextButton(
-                key: const ValueKey('stage-star-help'),
-                onPressed: explain,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  minimumSize: const Size(48, 48),
-                ),
-                child: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.star_rounded,
-                        size: 20,
-                        color: Color(0xFFE0A526),
-                      ),
-                      SizedBox(width: 2),
-                      Text(
-                        '星の見かた',
+              Row(
+                children: [
+                  areaArrow(next: false),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        narrow
+                            ? 'エリア${area.number}／${forestAreas.length}・$cleared/$stagesPerArea クリア'
+                            : 'エリア${area.number}／${forestAreas.length}・$cleared / $stagesPerArea ステージをクリア',
+                        key: const ValueKey('stage-progress'),
                         maxLines: 1,
-                        style: TextStyle(fontSize: 15),
+                        style: const TextStyle(fontSize: 16, height: 1.2),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  areaArrow(next: true),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      Expanded(
-        child: LayoutBuilder(
-          builder: (context, bounds) {
-            final mapHeight = mapHeightFor(bounds.maxWidth);
-            // The map shrinks with the screen, so the markers shrink with it:
-            // otherwise stages 8–10 near the top overlap on narrow phones.
-            final markerScale = (bounds.maxWidth / 400).clamp(.82, 1.0);
-            double markerLeft(int id) =>
-                (point(id, bounds.maxWidth).dx - markerWidth / 2).clamp(
-                  0.0,
-                  bounds.maxWidth - markerWidth,
-                );
-            return SingleChildScrollView(
-              key: const ValueKey('stage-map-scroll'),
-              controller: scroll,
-              child: SizedBox(
-                height: mapHeight,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(
-                    milliseconds: MediaQuery.disableAnimationsOf(context)
-                        ? 0
-                        : 650,
-                  ),
-                  builder: (context, light, child) => Stack(
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, bounds) {
+              final layout = layoutFor(bounds.maxWidth);
+              // The map shrinks with the screen, so the markers shrink with
+              // it: otherwise close stages overlap on narrow phones.
+              final markerScale = (bounds.maxWidth / 400).clamp(.82, 1.0);
+              final painted = layout.height - layout.legacyHeight;
+              return SingleChildScrollView(
+                key: const ValueKey('stage-map-scroll'),
+                controller: scroll,
+                child: SizedBox(
+                  key: ValueKey('stage-area-map-${area.number}'),
+                  height: layout.height,
+                  child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      // One un-cropped illustration; stage anchors use its exact
-                      // normalized coordinates and therefore scroll in lockstep.
+                      if (area.image != null)
+                        // Road-free scenery repeated down the map.
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: layout.height - layout.legacyHeight,
+                          child: ExcludeSemantics(
+                            child: IgnorePointer(
+                              child: Image.asset(
+                                area.image!,
+                                fit: BoxFit.fitWidth,
+                                repeat: ImageRepeat.repeatY,
+                                alignment: Alignment.topCenter,
+                                cacheWidth: 1080,
+                              ),
+                            ),
+                          ),
+                        ),
                       Positioned.fill(
                         child: ExcludeSemantics(
                           child: IgnorePointer(
-                            child: Image.asset(
-                              'assets/art/cartoon-map.png',
-                              fit: BoxFit.fill,
-                              cacheWidth: 1000,
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                painter: AreaScenePainter(
+                                  area,
+                                  layout,
+                                  roadOnly: area.image != null,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: RepaintBoundary(
-                            child: CustomPaint(
-                              painter: _MapAmbiencePainter(ambience),
+                      if (layout.legacyHeight > 0) ...[
+                        // The original 花咲く小道 illustration under stages
+                        // 1-10; its anchors keep their measured positions.
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: painted,
+                          height: layout.legacyHeight,
+                          child: ExcludeSemantics(
+                            child: IgnorePointer(
+                              child: Image.asset(
+                                legacyMapAsset,
+                                fit: BoxFit.fill,
+                                cacheWidth: 1000,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      if (widget.journey.cleared == forestStages.length)
-                        const Positioned(
-                          top: 135,
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: painted,
+                          height: layout.legacyHeight,
+                          child: IgnorePointer(
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                painter: _MapAmbiencePainter(ambience),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Soft seam where the painted road continues upward.
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: painted - 1,
+                          height: 40,
+                          child: IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    paletteFor(area).ground,
+                                    paletteFor(
+                                      area,
+                                    ).ground.withValues(alpha: 0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (allCleared)
+                        Positioned(
+                          top: 26,
                           left: 12,
                           right: 12,
                           child: Text(
-                            '小道を踏破！ また遊びにきてね',
+                            nextArea == null
+                                ? '1,000ステージ踏破！ また遊びにきてね'
+                                : 'このエリアを踏破！ 次は「${nextArea.name}」へ',
+                            key: const ValueKey('stage-area-complete'),
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 20,
                               color: Color(0xFF28543C),
                               fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(color: Colors.white, blurRadius: 6),
+                              ],
                             ),
                           ),
                         ),
-                      for (final stage in forestStages)
+                      for (final entry in layout.nodes.entries)
                         Positioned(
-                          left: markerLeft(stage.id),
-                          top: point(stage.id, bounds.maxWidth).dy - 32,
+                          left: (entry.value.dx - markerWidth / 2).clamp(
+                            0.0,
+                            bounds.maxWidth - markerWidth,
+                          ),
+                          top: entry.value.dy - 32,
                           width: markerWidth,
                           height: markerHeight,
                           child: Transform.scale(
                             scale: markerScale,
                             child: _StageButton(
-                              stage: stage,
-                              stars: widget.journey.stars[stage.id] ?? 0,
-                              current: stage.id == widget.journey.frontier,
-                              unlocked: widget.journey.unlocked(stage.id),
+                              stage: forestStages[entry.key - 1],
+                              stars: widget.journey.stars[entry.key] ?? 0,
+                              current: entry.key == widget.journey.frontier,
+                              unlocked: widget.journey.unlocked(entry.key),
                               animateStars:
-                                  stage.id ==
+                                  entry.key ==
                                   (widget.journey.cleared == forestStages.length
                                       ? forestStages.length
                                       : widget.journey.frontier - 1),
-                              onPressed: () => widget.onSelect(stage.id),
+                              onPressed: () => widget.onSelect(entry.key),
                             ),
                           ),
                         ),
                     ],
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-        child: SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: widget.onNormalModes,
-            style: OutlinedButton.styleFrom(
-              backgroundColor: const Color(0xF5FFF9E7),
-            ),
-            child: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text('3文字・4文字・5文字をえらぶ', maxLines: 1),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: widget.onNormalModes,
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xF5FFF9E7),
+              ),
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('3文字・4文字・5文字をえらぶ', maxLines: 1),
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 /// Small, transparent effects share normalized coordinates with the single
@@ -667,19 +774,29 @@ class _StageButton extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Text(
-                              '${stage.id}',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                height: 1,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    color: Color(0xFF403595),
-                                    offset: Offset(0, 1),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '${stage.id}',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    height: 1,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        color: Color(0xFF403595),
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                             if (!unlocked)

@@ -15,7 +15,7 @@ void main() {
     expect(restored.sessions[1]?.clearRewardDate, '2026-10-25');
   });
 
-  test('10ステージを順に遊び、保存・再挑戦で最高評価と解放を保つ', () {
+  test('全ステージを順に遊び、保存・再挑戦で最高評価と解放を保つ', () {
     var journey = StageJourney();
     expect(journey.start(2), isNull);
 

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kotoba_no_mori/game.dart';
 import 'package:kotoba_no_mori/loading_screen.dart';
-import 'package:kotoba_no_mori/stage_journey.dart';
+import 'package:kotoba_no_mori/stage_areas.dart';
 import 'package:kotoba_no_mori/main.dart';
 import 'app_launch.dart';
 
@@ -60,7 +60,8 @@ void main() {
           expect(box.right, lessThanOrEqualTo(size.width), reason: key);
         }
         // Every stage marker stays inside the map horizontally.
-        for (var id = 1; id <= forestStages.length; id++) {
+        // The map shows one area: every stage of area 1 stays on screen width.
+        for (var id = 1; id <= stagesPerArea; id++) {
           final marker = tester.getRect(find.byKey(ValueKey('stage-$id')));
           expect(marker.left, greaterThanOrEqualTo(0), reason: 'stage $id');
           expect(

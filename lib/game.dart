@@ -134,6 +134,9 @@ String normalize(String input) => String.fromCharCodes(
   input.trim().runes.map((r) => r >= 0x30a1 && r <= 0x30f6 ? r - 0x60 : r),
 );
 
+/// Highest stage number (25 areas × 40 stages; see stage_areas.dart).
+const maxStageId = 1000;
+
 class Word {
   final String text;
   final String clue;
@@ -742,7 +745,7 @@ class Progress {
     DateTime now, {
     required bool wasPreviouslyCleared,
   }) {
-    if (stageId < 1 || stageId > 100) return 0;
+    if (stageId < 1 || stageId > maxStageId) return 0;
     final today = dayKey(now);
     final previousDate = stageRewardDates[stageId] ?? '';
     if (previousDate.compareTo(today) >= 0) return 0;

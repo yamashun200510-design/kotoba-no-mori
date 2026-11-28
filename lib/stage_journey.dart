@@ -2,33 +2,24 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'game.dart';
 import 'invitation.dart';
+import 'stage_areas.dart';
+import 'stage_catalog.dart';
 
 class ForestStage {
   final int id;
   final String answer;
   const ForestStage(this.id, this.answer);
   Word get word => words.firstWhere((word) => word.text == answer);
-  String get area => const [
-    '花咲く小道',
-    'せせらぎの森',
-    'きのこの森',
-    'きらめきの森',
-  ][((id - 1) ~/ 10).clamp(0, 3)];
+  ForestArea get areaInfo => areaOfStage(id);
+  String get area => areaInfo.name;
 }
 
-// Stable IDs and answers: adding catalogue entries must not move these stages.
-const forestStages = [
-  ForestStage(1, 'さくら'),
-  ForestStage(2, 'うさぎ'),
-  ForestStage(3, 'すみれ'),
-  ForestStage(4, 'たんぽぽ'),
-  ForestStage(5, 'きつね'),
-  ForestStage(6, 'どんぐり'),
-  ForestStage(7, 'もみじ'),
-  ForestStage(8, 'ひまわり'),
-  ForestStage(9, 'いちご'),
-  ForestStage(10, 'あじさい'),
-];
+// Stable IDs and answers (lib/stage_catalog.dart): stages 1-10 keep their
+// original answers, and adding catalogue entries never moves a stage.
+final List<ForestStage> forestStages = List.unmodifiable([
+  for (var i = 0; i < stageAnswers.length; i++)
+    ForestStage(i + 1, stageAnswers[i]),
+]);
 
 /// Reuses the existing unbounded guest puzzle, but supplies a catalogue word.
 class StageSession extends InvitationPuzzle {
@@ -52,7 +43,8 @@ class StageJourney {
       )
       .id;
   bool unlocked(int id) =>
-      forestStages.any((stage) => stage.id == id) &&
+      id >= 1 &&
+      id <= forestStages.length &&
       (id == 1 || (stars[id - 1] ?? 0) > 0);
   static int rating(int attempts) => attempts <= 0
       ? 0
@@ -65,9 +57,7 @@ class StageJourney {
     if (!unlocked(id)) return null;
     final old = sessions[id];
     if (old != null && !old.won) return old;
-    final session = StageSession(
-      forestStages.firstWhere((stage) => stage.id == id),
-    );
+    final session = StageSession(forestStages[id - 1]);
     sessions[id] = session;
     return session;
   }

@@ -3,6 +3,7 @@ import 'package:flutter/painting.dart';
 /// Landscape themes of the journey. Each area paints a matching placeholder
 /// until its illustration is supplied (see HANDOVER.md, エリア一覧).
 enum AreaTheme {
+  // The journey through Japanese nature and seasons.
   forest,
   river,
   hill,
@@ -11,9 +12,21 @@ enum AreaTheme {
   seaside,
   snowfield,
   meadow,
+  // Special worlds visited along the way.
+  onsen,
+  desert,
+  deepSea,
+  sweets,
+  heaven,
+  hell,
+  cyber,
+  space;
+
+  bool get isSpecial => index >= AreaTheme.onsen.index;
 }
 
-enum AreaSeason { spring, summer, autumn, winter, dusk }
+/// Season of a nature area; special worlds use [special].
+enum AreaSeason { spring, summer, autumn, winter, dusk, special }
 
 /// The character of the road the app draws in an area, so areas do not all
 /// look alike: winding, right-angle zigzags, straight stone stairs, a road
@@ -50,8 +63,11 @@ class ForestArea {
 
 const stagesPerArea = 40;
 
-/// A journey through Japanese seasons: 森→川辺→丘→田んぼ→山→海辺→雪原→夕焼けの草原.
-/// Area 1 keeps the original 花咲く小道 map for stages 1-10.
+/// A journey through Japanese nature and seasons (春の森→川辺→丘→田んぼ→山→
+/// 浜辺→夏→夕焼けの草原→秋→冬の雪原→ふるさとの春の森), with eight special
+/// worlds on the way (12 温泉郷, 13 砂漠, 16 深海, 19 お菓子の国, 21 天国,
+/// 22 地獄, 23 サイバーパンク, 24 宇宙). Area 1 keeps the original 花咲く小道
+/// map for stages 1-10. Road shapes are fixed per area.
 const forestAreas = <ForestArea>[
   ForestArea(
     1,
@@ -102,19 +118,19 @@ const forestAreas = <ForestArea>[
   ),
   ForestArea(
     12,
-    '潮騒の海辺',
-    AreaTheme.seaside,
-    AreaSeason.summer,
+    '湯けむりの温泉郷',
+    AreaTheme.onsen,
+    AreaSeason.special,
     RoadStyle.switchback,
   ),
   ForestArea(
     13,
-    '夕焼けの草原',
-    AreaTheme.meadow,
-    AreaSeason.dusk,
+    'らくだの砂漠',
+    AreaTheme.desert,
+    AreaSeason.special,
     RoadStyle.meander,
   ),
-  ForestArea(14, '紅葉の森', AreaTheme.forest, AreaSeason.autumn, RoadStyle.stairs),
+  ForestArea(14, '夕焼けの草原', AreaTheme.meadow, AreaSeason.dusk, RoadStyle.stairs),
   ForestArea(
     15,
     '月見の川辺',
@@ -122,7 +138,13 @@ const forestAreas = <ForestArea>[
     AreaSeason.autumn,
     RoadStyle.riverside,
   ),
-  ForestArea(16, 'すすきの丘', AreaTheme.hill, AreaSeason.autumn, RoadStyle.zigzag),
+  ForestArea(
+    16,
+    'きらめく深海',
+    AreaTheme.deepSea,
+    AreaSeason.special,
+    RoadStyle.zigzag,
+  ),
   ForestArea(17, '黄金の田んぼ', AreaTheme.paddy, AreaSeason.autumn, RoadStyle.weave),
   ForestArea(
     18,
@@ -133,43 +155,49 @@ const forestAreas = <ForestArea>[
   ),
   ForestArea(
     19,
-    '茜色の草原',
-    AreaTheme.meadow,
-    AreaSeason.autumn,
+    'お菓子の国',
+    AreaTheme.sweets,
+    AreaSeason.special,
     RoadStyle.meander,
   ),
   ForestArea(
     20,
-    '冬木立の森',
-    AreaTheme.forest,
+    '銀世界の雪原',
+    AreaTheme.snowfield,
     AreaSeason.winter,
     RoadStyle.stairs,
   ),
   ForestArea(
     21,
-    '朝霧の川辺',
-    AreaTheme.river,
-    AreaSeason.winter,
+    '雲の上の天国',
+    AreaTheme.heaven,
+    AreaSeason.special,
     RoadStyle.riverside,
   ),
-  ForestArea(22, '雪化粧の丘', AreaTheme.hill, AreaSeason.winter, RoadStyle.zigzag),
+  ForestArea(
+    22,
+    'にぎやか地獄',
+    AreaTheme.hell,
+    AreaSeason.special,
+    RoadStyle.zigzag,
+  ),
   ForestArea(
     23,
-    '銀世界の雪原',
-    AreaTheme.snowfield,
-    AreaSeason.winter,
+    'ネオンの夜の街',
+    AreaTheme.cyber,
+    AreaSeason.special,
     RoadStyle.weave,
   ),
   ForestArea(
     24,
-    '冬の海辺',
-    AreaTheme.seaside,
-    AreaSeason.winter,
+    '星めぐりの宇宙',
+    AreaTheme.space,
+    AreaSeason.special,
     RoadStyle.zigzag,
   ),
   ForestArea(
     25,
-    'ふたたび春の森',
+    'ふるさとの春の森',
     AreaTheme.forest,
     AreaSeason.spring,
     RoadStyle.stairs,
@@ -201,19 +229,23 @@ class AreaPalette {
 }
 
 AreaPalette paletteFor(ForestArea area) {
+  final special = _specialPalettes[area.theme];
+  if (special != null) return special;
   final foliage = switch (area.season) {
     AreaSeason.spring => (const Color(0xFF7CC26B), const Color(0xFF4E9A52)),
     AreaSeason.summer => (const Color(0xFF4FA35A), const Color(0xFF2F7A43)),
     AreaSeason.autumn => (const Color(0xFFE08A3C), const Color(0xFFB85A2B)),
     AreaSeason.winter => (const Color(0xFF9DB0A5), const Color(0xFF6D8077)),
-    AreaSeason.dusk => (const Color(0xFFB79A4C), const Color(0xFF8A6C35)),
+    AreaSeason.dusk ||
+    AreaSeason.special => (const Color(0xFFB79A4C), const Color(0xFF8A6C35)),
   };
   final accents = switch (area.season) {
     AreaSeason.spring => (const Color(0xFFF6A9BE), const Color(0xFFFFE07A)),
     AreaSeason.summer => (const Color(0xFFFFD34F), const Color(0xFF7FC8F0)),
     AreaSeason.autumn => (const Color(0xFFD9483B), const Color(0xFFF2C14E)),
     AreaSeason.winter => (const Color(0xFFFFFFFF), const Color(0xFFD7E6F2)),
-    AreaSeason.dusk => (const Color(0xFFF59A5B), const Color(0xFFFFD27A)),
+    AreaSeason.dusk ||
+    AreaSeason.special => (const Color(0xFFF59A5B), const Color(0xFFFFD27A)),
   };
   final sky = switch (area.season) {
     AreaSeason.dusk => (const Color(0xFFF7A766), const Color(0xFFFCE0B0)),
@@ -255,3 +287,127 @@ AreaPalette paletteFor(ForestArea area) {
     accent2: accents.$2,
   );
 }
+
+AreaPalette _palette(
+  int skyTop,
+  int skyBottom,
+  int ground,
+  int groundShade,
+  int trail,
+  int trailEdge,
+  int foliage,
+  int foliageShade,
+  int accent,
+  int accent2,
+) => AreaPalette(
+  skyTop: Color(skyTop),
+  skyBottom: Color(skyBottom),
+  ground: Color(ground),
+  groundShade: Color(groundShade),
+  trail: Color(trail),
+  trailEdge: Color(trailEdge),
+  foliage: Color(foliage),
+  foliageShade: Color(foliageShade),
+  accent: Color(accent),
+  accent2: Color(accent2),
+);
+
+/// Colours of the special worlds. 地獄 is deliberately bright and playful.
+final _specialPalettes = <AreaTheme, AreaPalette>{
+  AreaTheme.onsen: _palette(
+    0xFFB8D8EC,
+    0xFFF1EEE6,
+    0xFFD9CBB0,
+    0xFFC8B795,
+    0xFFE9E3D7,
+    0xFF9C9284,
+    0xFF6FA36A,
+    0xFF4C7C4E,
+    0xFFE85D4A,
+    0xFFFFFFFF,
+  ),
+  AreaTheme.desert: _palette(
+    0xFF8FD0F2,
+    0xFFFBE7C4,
+    0xFFF0D59A,
+    0xFFDDBB76,
+    0xFFFFF0CF,
+    0xFFC29A5A,
+    0xFF6FA35A,
+    0xFF4D7E43,
+    0xFFE88A5A,
+    0xFFFFD86B,
+  ),
+  AreaTheme.deepSea: _palette(
+    0xFF3A86C2,
+    0xFF1D4E80,
+    0xFF1B4373,
+    0xFF143258,
+    0xFFE9DDB8,
+    0xFFB3A57E,
+    0xFF3FA88A,
+    0xFF2C7D68,
+    0xFFFF8FA3,
+    0xFFFFD36B,
+  ),
+  AreaTheme.sweets: _palette(
+    0xFFFFC7E1,
+    0xFFFFF0F6,
+    0xFFFFE1EC,
+    0xFFFFCFE0,
+    0xFFF3D19A,
+    0xFFB9824A,
+    0xFF9EE0C8,
+    0xFF6CC3A6,
+    0xFFFF6FA0,
+    0xFF8ED1FF,
+  ),
+  AreaTheme.heaven: _palette(
+    0xFFBFE4FF,
+    0xFFF6FBFF,
+    0xFFF1F7FF,
+    0xFFE0EBF8,
+    0xFFFFF0BF,
+    0xFFE2B85A,
+    0xFFFFFFFF,
+    0xFFDCE8F5,
+    0xFFFFE07A,
+    0xFFFFB8D9,
+  ),
+  AreaTheme.hell: _palette(
+    0xFF9A5BD6,
+    0xFFFFA98A,
+    0xFFFFA275,
+    0xFFF38A5E,
+    0xFFFFE9C2,
+    0xFFB04A6A,
+    0xFFB45CE0,
+    0xFF8A3DB8,
+    0xFFFFD34F,
+    0xFFFF5C8A,
+  ),
+  AreaTheme.cyber: _palette(
+    0xFF1A1440,
+    0xFF3A1F6E,
+    0xFF1F1B3D,
+    0xFF17142F,
+    0xFF2C315E,
+    0xFF22E5FF,
+    0xFF2E2A5C,
+    0xFF242050,
+    0xFFFF3DCB,
+    0xFF29F0FF,
+  ),
+  AreaTheme.space: _palette(
+    0xFF0E1033,
+    0xFF242A72,
+    0xFF181C48,
+    0xFF10133A,
+    0xFFD8DCEF,
+    0xFF8C93C2,
+    0xFF6FA8FF,
+    0xFF4A70D0,
+    0xFFFFD86B,
+    0xFFFF8FB8,
+  ),
+};

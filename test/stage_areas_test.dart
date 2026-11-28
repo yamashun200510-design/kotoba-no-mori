@@ -58,6 +58,60 @@ void main() {
     );
   });
 
+  test('特殊ワールドは12・13・16・19・21・22・23・24、ほかは自然と四季の旅', () {
+    const special = {
+      12: AreaTheme.onsen,
+      13: AreaTheme.desert,
+      16: AreaTheme.deepSea,
+      19: AreaTheme.sweets,
+      21: AreaTheme.heaven,
+      22: AreaTheme.hell,
+      23: AreaTheme.cyber,
+      24: AreaTheme.space,
+    };
+    for (final area in forestAreas) {
+      if (special.containsKey(area.number)) {
+        expect(area.theme, special[area.number], reason: area.name);
+        expect(area.season, AreaSeason.special, reason: area.name);
+      } else {
+        expect(area.theme.isSpecial, isFalse, reason: area.name);
+        expect(area.season, isNot(AreaSeason.special), reason: area.name);
+      }
+    }
+    // The journey ends by coming home to the spring forest.
+    expect(forestAreas.last.theme, AreaTheme.forest);
+    expect(forestAreas.last.season, AreaSeason.spring);
+    // Road shapes per area are unchanged by the theme swap.
+    const roads = [
+      RoadStyle.meander,
+      RoadStyle.riverside,
+      RoadStyle.zigzag,
+      RoadStyle.weave,
+      RoadStyle.switchback,
+      RoadStyle.meander,
+      RoadStyle.weave,
+      RoadStyle.riverside,
+      RoadStyle.zigzag,
+      RoadStyle.weave,
+      RoadStyle.stairs,
+      RoadStyle.switchback,
+      RoadStyle.meander,
+      RoadStyle.stairs,
+      RoadStyle.riverside,
+      RoadStyle.zigzag,
+      RoadStyle.weave,
+      RoadStyle.switchback,
+      RoadStyle.meander,
+      RoadStyle.stairs,
+      RoadStyle.riverside,
+      RoadStyle.zigzag,
+      RoadStyle.weave,
+      RoadStyle.zigzag,
+      RoadStyle.stairs,
+    ];
+    expect(forestAreas.map((a) => a.road).toList(), roads);
+  });
+
   for (final width in const [320.0, 360.0, 411.0]) {
     test('幅$widthで全エリアの40ステージが道に沿って等間隔に並び、重ならない', () {
       for (final area in forestAreas) {

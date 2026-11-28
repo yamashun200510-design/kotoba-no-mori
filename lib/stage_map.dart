@@ -350,6 +350,8 @@ class _ForestStageMapState extends State<ForestStageMap>
               // it: otherwise close stages overlap on narrow phones.
               final markerScale = (bounds.maxWidth / 400).clamp(.82, 1.0);
               final painted = layout.height - layout.legacyHeight;
+              double markerLeft(Offset node) => (node.dx - markerWidth / 2)
+                  .clamp(0.0, bounds.maxWidth - markerWidth);
               return SingleChildScrollView(
                 key: const ValueKey('stage-map-scroll'),
                 controller: scroll,
@@ -471,10 +473,7 @@ class _ForestStageMapState extends State<ForestStageMap>
                         ),
                       for (final entry in layout.nodes.entries)
                         Positioned(
-                          left: (entry.value.dx - markerWidth / 2).clamp(
-                            0.0,
-                            bounds.maxWidth - markerWidth,
-                          ),
+                          left: markerLeft(entry.value),
                           top: entry.value.dy - 32,
                           width: markerWidth,
                           height: markerHeight,
@@ -482,18 +481,47 @@ class _ForestStageMapState extends State<ForestStageMap>
                             scale: markerScale,
                             child: _StageButton(
                               stage: forestStages[entry.key - 1],
-                              stars: widget.journey.stars[entry.key] ?? 0,
                               current: entry.key == widget.journey.frontier,
                               unlocked: widget.journey.unlocked(entry.key),
-                              animateStars:
-                                  entry.key ==
-                                  (widget.journey.cleared == forestStages.length
-                                      ? forestStages.length
-                                      : widget.journey.frontier - 1),
                               onPressed: () => widget.onSelect(entry.key),
                             ),
                           ),
                         ),
+                      // Earned stars go on a layer above every marker, so the
+                      // next stage's button never hides them where stages sit
+                      // close together (the original map under stages 1-10).
+                      for (final entry in layout.nodes.entries)
+                        if (widget.journey.unlocked(entry.key) &&
+                            (widget.journey.stars[entry.key] ?? 0) > 0)
+                          Positioned(
+                            left: markerLeft(entry.value),
+                            top: entry.value.dy - 32,
+                            width: markerWidth,
+                            height: markerHeight,
+                            child: IgnorePointer(
+                              child: Transform.scale(
+                                scale: markerScale,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Positioned(
+                                      top: -14,
+                                      left: 4,
+                                      child: _StarBadge(
+                                        count: widget.journey.stars[entry.key]!,
+                                        animate:
+                                            entry.key ==
+                                            (widget.journey.cleared ==
+                                                    forestStages.length
+                                                ? forestStages.length
+                                                : widget.journey.frontier - 1),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                     ],
                   ),
                 ),
@@ -650,19 +678,40 @@ class _MapAmbiencePainter extends CustomPainter {
       oldDelegate.clock != clock;
 }
 
+/// Earned stars on a soft light backing so they read on any scenery.
+class _StarBadge extends StatelessWidget {
+  final int count;
+  final bool animate;
+  const _StarBadge({required this.count, this.animate = false});
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xD9FFFBEF),
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x33442D1D),
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(3, 4, 3, 1),
+      child: StageStars(count: count, animate: animate, size: 18),
+    ),
+  );
+}
+
 class _StageButton extends StatelessWidget {
   final ForestStage stage;
-  final int stars;
   final bool current, unlocked;
-  final bool animateStars;
   final VoidCallback onPressed;
   const _StageButton({
     required this.stage,
-    required this.stars,
     required this.current,
     required this.unlocked,
     required this.onPressed,
-    this.animateStars = false,
   });
   @override
   Widget build(BuildContext context) {
@@ -681,18 +730,6 @@ class _StageButton extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          if (unlocked && stars > 0)
-            Positioned(
-              // Earned stars sit just above the marker and remain unobscured
-              // by the circular stage button.
-              top: -10,
-              left: 7,
-              child: StageStars(
-                count: stars,
-                animate: stars > 0 && animateStars,
-                size: 18,
-              ),
-            ),
           Positioned(
             top: 8,
             left: 10,

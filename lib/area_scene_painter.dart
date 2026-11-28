@@ -13,8 +13,8 @@ class AreaScenePainter extends CustomPainter {
   final AreaLayout layout;
   final AreaPalette palette;
 
-  /// When the area's scenery image is shown underneath, only the road is
-  /// drawn here.
+  /// When the area's scenery image is shown underneath, only the road (and,
+  /// in riverside areas, the river it crosses) is drawn here.
   final bool roadOnly;
   AreaScenePainter(this.area, this.layout, {this.roadOnly = false})
     : palette = paletteFor(area);
@@ -22,15 +22,24 @@ class AreaScenePainter extends CustomPainter {
   /// The painted part ends where the original illustration (area 1) begins.
   double get _paintedBottom => layout.height - layout.legacyHeight;
 
-  double _trailX(double y) {
+  /// Distance from [p] to the road (the trail is densely sampled).
+  double _distanceToRoad(Offset p) {
+    var best = double.infinity;
     final trail = layout.trail;
-    if (trail.isEmpty) return layout.width / 2;
-    var best = trail.first;
-    for (final p in trail) {
-      if ((p.dy - y).abs() < (best.dy - y).abs()) best = p;
+    for (var i = 0; i < trail.length; i += 2) {
+      final d = (trail[i] - p).distanceSquared;
+      if (d < best) best = d;
     }
-    return best.dx;
+    return math.sqrt(best);
   }
+
+  bool get _riverside => area.road == RoadStyle.riverside;
+
+  /// The river of riverside areas runs down the middle, between the banks
+  /// the road follows.
+  double _riverX(double y, double w) =>
+      w * (.5 + .025 * math.sin(y / 170 + area.number));
+  static const _riverHalfWidth = .12;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -41,6 +50,8 @@ class AreaScenePainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(Rect.fromLTWH(0, 0, w, bottom));
     if (roadOnly) {
+      // The river stays app-drawn so the bridges always line up with it.
+      if (_riverside) _river(canvas, w, bottom);
       _trail(canvas);
       canvas.restore();
       return;
@@ -57,7 +68,7 @@ class AreaScenePainter extends CustomPainter {
     fill.shader = null;
 
     _sky(canvas, w);
-    if (area.theme == AreaTheme.river) _river(canvas, w, bottom);
+    if (_riverside) _river(canvas, w, bottom);
     if (area.theme == AreaTheme.seaside) _sea(canvas, w, bottom);
     _motifs(canvas, w, bottom, rng);
     _trail(canvas);
@@ -160,12 +171,12 @@ class AreaScenePainter extends CustomPainter {
   }
 
   void _river(Canvas canvas, double w, double bottom) {
-    // A stream winding opposite the trail; where they cross, the trail
-    // reads as a small bridge.
+    // A river down the middle; the road follows one bank and crosses it on
+    // bridges (drawn with the road).
     final path = Path();
     var first = true;
-    for (var y = 210.0; y <= bottom; y += 6) {
-      final x = w - _trailX(y);
+    for (var y = 200.0; y <= bottom; y += 6) {
+      final x = _riverX(y, w);
       if (first) {
         path.moveTo(x, y);
         first = false;
@@ -177,7 +188,7 @@ class AreaScenePainter extends CustomPainter {
       path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 46
+        ..strokeWidth = w * _riverHalfWidth * 2
         ..strokeCap = StrokeCap.round
         ..color = area.season == AreaSeason.winter
             ? const Color(0xFFA9C7D9)
@@ -224,23 +235,80 @@ class AreaScenePainter extends CustomPainter {
   }
 
   void _motifs(Canvas canvas, double w, double bottom, math.Random rng) {
-    for (var y = 240.0; y < bottom - 20; y += 54) {
-      final trailX = _trailX(y);
-      for (var n = 0; n < 2; n++) {
-        final left = rng.nextBool();
-        final minX = area.theme == AreaTheme.seaside ? w * .30 : 18.0;
-        final x = left
-            ? minX + rng.nextDouble() * math.max(0, trailX - 64 - minX)
-            : trailX +
-                  64 +
-                  rng.nextDouble() * math.max(0, w - 18 - trailX - 64);
-        if ((x - trailX).abs() < 56) continue;
-        if (area.theme == AreaTheme.river && (x - (w - trailX)).abs() < 40) {
-          continue;
+    final minX = area.theme == AreaTheme.seaside ? w * .30 : 18.0;
+    for (var y = 240.0; y < bottom - 20; y += 46) {
+      for (var n = 0; n < 3; n++) {
+        final p = Offset(
+          minX + rng.nextDouble() * (w - 18 - minX),
+          y + rng.nextDouble() * 30,
+        );
+        if (_distanceToRoad(p) < 52) continue;
+        if (_riverside && (p.dx - _riverX(p.dy, w)).abs() < w * .17) continue;
+        if (area.road == RoadStyle.weave && rng.nextDouble() < .3) {
+          _obstacle(canvas, p, rng);
+        } else {
+          _motif(canvas, p, rng);
         }
-        final p = Offset(x, y + rng.nextDouble() * 30);
-        _motif(canvas, p, rng);
       }
+    }
+  }
+
+  /// Houses, rocks and ponds the weaving road threads between.
+  void _obstacle(Canvas canvas, Offset p, math.Random rng) {
+    final paint = Paint()..isAntiAlias = true;
+    switch (rng.nextInt(3)) {
+      case 0:
+        // A small farmhouse.
+        paint.color = const Color(0xFFEDE0C8);
+        canvas.drawRect(
+          Rect.fromCenter(center: p, width: 30, height: 20),
+          paint,
+        );
+        paint.color = area.season == AreaSeason.winter
+            ? Colors.white
+            : const Color(0xFF8C5A3C);
+        canvas.drawPath(
+          Path()
+            ..moveTo(p.dx - 20, p.dy - 9)
+            ..lineTo(p.dx, p.dy - 24)
+            ..lineTo(p.dx + 20, p.dy - 9)
+            ..close(),
+          paint,
+        );
+        paint.color = const Color(0xFF6B4A33);
+        canvas.drawRect(Rect.fromLTWH(p.dx - 4, p.dy - 2, 8, 12), paint);
+      case 1:
+        // Rocks.
+        paint.color = const Color(0xFFA8A69C);
+        canvas.drawOval(
+          Rect.fromCenter(center: p, width: 30, height: 20),
+          paint,
+        );
+        paint.color = const Color(0xFFC9C7BD);
+        canvas.drawOval(
+          Rect.fromCenter(center: p.translate(-9, 3), width: 18, height: 12),
+          paint,
+        );
+      default:
+        // A little pond.
+        paint.color = area.season == AreaSeason.winter
+            ? const Color(0xFFC9DCE8)
+            : const Color(0xFF7FC3E3);
+        canvas.drawOval(
+          Rect.fromCenter(center: p, width: 38, height: 20),
+          paint,
+        );
+        paint
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = Colors.white.withValues(alpha: .6);
+        canvas.drawArc(
+          Rect.fromCenter(center: p, width: 24, height: 10),
+          math.pi,
+          math.pi * .7,
+          false,
+          paint,
+        );
     }
   }
 
@@ -444,11 +512,75 @@ class AreaScenePainter extends CustomPainter {
         ..strokeWidth = 33
         ..color = palette.trail,
     );
-    // A few pebbles along the center so the road reads as a path.
-    final pebble = Paint()..color = palette.trailEdge.withValues(alpha: .35);
-    for (var i = 0; i < trail.length; i += 9) {
-      final p = trail[i];
-      canvas.drawCircle(p.translate(i.isEven ? 7 : -8, 0), 2, pebble);
+    switch (area.road) {
+      case RoadStyle.stairs:
+        _steps(canvas, trail);
+      case RoadStyle.riverside:
+        _bridges(canvas, trail);
+      default:
+        // A few pebbles along the center so the road reads as a path.
+        final pebble = Paint()
+          ..color = palette.trailEdge.withValues(alpha: .35);
+        for (var i = 0; i < trail.length; i += 9) {
+          final p = trail[i];
+          canvas.drawCircle(p.translate(i.isEven ? 7 : -8, 0), 2, pebble);
+        }
+    }
+  }
+
+  /// Stone steps across the climbing parts of a stairs road.
+  void _steps(Canvas canvas, List<Offset> trail) {
+    final line = Paint()
+      ..color = palette.trailEdge.withValues(alpha: .65)
+      ..strokeWidth = 2;
+    var since = 0.0;
+    for (var i = 1; i < trail.length; i++) {
+      final a = trail[i - 1], b = trail[i];
+      final climbing = (b.dx - a.dx).abs() < .5;
+      since += (b - a).distance;
+      if (climbing && since >= 11) {
+        since = 0;
+        canvas.drawLine(b.translate(-15, 0), b.translate(15, 0), line);
+      }
+    }
+  }
+
+  /// Wooden bridges where a riverside road crosses the river.
+  void _bridges(Canvas canvas, List<Offset> trail) {
+    final w = layout.width;
+    final plank = Paint()..color = const Color(0xFFB98552);
+    final seam = Paint()
+      ..color = const Color(0xFF7C5432)
+      ..strokeWidth = 1.5;
+    final rail = Paint()
+      ..color = const Color(0xFF6E4A2C)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    var i = 1;
+    while (i < trail.length) {
+      if ((trail[i].dy - trail[i - 1].dy).abs() > .5) {
+        i++;
+        continue;
+      }
+      // A horizontal run: the bridge.
+      final y = trail[i].dy;
+      var j = i;
+      while (j < trail.length && (trail[j].dy - y).abs() <= .5) {
+        j++;
+      }
+      final xs = [trail[i - 1].dx, trail[j - 1].dx]..sort();
+      final river = _riverX(y, w);
+      final from = math.max(xs[0], river - w * (_riverHalfWidth + .03));
+      final to = math.min(xs[1], river + w * (_riverHalfWidth + .03));
+      if (to > from) {
+        canvas.drawRect(Rect.fromLTRB(from, y - 17, to, y + 17), plank);
+        for (var x = from + 6; x < to; x += 7) {
+          canvas.drawLine(Offset(x, y - 17), Offset(x, y + 17), seam);
+        }
+        canvas.drawLine(Offset(from, y - 18), Offset(to, y - 18), rail);
+        canvas.drawLine(Offset(from, y + 18), Offset(to, y + 18), rail);
+      }
+      i = j + 1;
     }
   }
 

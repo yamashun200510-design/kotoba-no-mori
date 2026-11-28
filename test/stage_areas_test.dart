@@ -40,6 +40,18 @@ void main() {
     expect(forestStages[40].area, forestAreas[1].name);
     expect(forestStages.last.area, forestAreas.last.name);
     expect(
+      forestAreas.map((a) => a.road).toSet(),
+      RoadStyle.values.toSet(),
+      reason: '道の形は6種類すべて使う',
+    );
+    for (var i = 1; i < forestAreas.length; i++) {
+      expect(
+        forestAreas[i].road,
+        isNot(forestAreas[i - 1].road),
+        reason: '隣り合うエリアは道の形を変える',
+      );
+    }
+    expect(
       forestAreas.map((a) => a.theme).toSet(),
       AreaTheme.values.toSet(),
       reason: '8つの風景テーマをすべて旅する',
@@ -74,21 +86,42 @@ void main() {
         }
         if (layout.trail.isNotEmpty) {
           // The last stage ends the road; painted areas also start on it.
-          expect(layout.nodes[area.lastStage], layout.trail.last);
+          expect(
+            (layout.nodes[area.lastStage]! - layout.trail.last).distance,
+            lessThan(.01),
+          );
           if (area.number != 1) {
-            expect(layout.nodes[area.firstStage], layout.trail.first);
+            expect(
+              (layout.nodes[area.firstStage]! - layout.trail.first).distance,
+              lessThan(.01),
+            );
           }
-          // Equal steps along the road (straight-line gaps vary only a little).
+          // Equal steps along the road: the straight gap between neighbours
+          // equals the step on straight stretches and is shorter only where
+          // the road turns a corner between them.
+          var length = 0.0;
+          for (var i = 1; i < layout.trail.length; i++) {
+            length += (layout.trail[i] - layout.trail[i - 1]).distance;
+          }
           final from = area.number == 1
               ? area.firstStage + 10
               : area.firstStage + 1;
-          final gaps = [
-            for (var id = from; id <= area.lastStage; id++)
-              (layout.nodes[id]! - layout.nodes[id - 1]!).distance,
-          ];
-          final mean = gaps.reduce((a, b) => a + b) / gaps.length;
-          for (final g in gaps) {
-            expect(g, closeTo(mean, mean * .2), reason: area.name);
+          final steps = area.number == 1
+              ? stagesPerArea - 10
+              : stagesPerArea - 1;
+          final step = length / steps;
+          for (var id = from; id <= area.lastStage; id++) {
+            final gap = (layout.nodes[id]! - layout.nodes[id - 1]!).distance;
+            expect(
+              gap,
+              lessThanOrEqualTo(step * 1.01),
+              reason: '${area.name} $id',
+            );
+            expect(
+              gap,
+              greaterThanOrEqualTo(step * .6),
+              reason: '${area.name} $id',
+            );
           }
         }
       }

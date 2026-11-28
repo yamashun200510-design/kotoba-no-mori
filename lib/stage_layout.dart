@@ -85,17 +85,136 @@ AreaLayout layoutArea(ForestArea area, double width) {
     );
   }
   final height = (count - 1) * stageSpacing + mapTopPad + mapBottomPad;
-  final start = Offset(
-    width * (area.number.isEven ? .42 : .58),
-    height - mapBottomPad,
-  );
-  final trail = serpentine(start, mapTopPad, width, seed: area.number);
+  // Start where the road's first stretch begins (on a river bank, a stair
+  // lane, a weave column...), alternating sides between areas.
+  final side = area.number.isEven;
+  final startX = switch (area.road) {
+    RoadStyle.meander => side ? .42 : .58,
+    RoadStyle.zigzag => side ? .22 : .78,
+    RoadStyle.stairs => side ? .40 : .60,
+    RoadStyle.weave => side ? .35 : .65,
+    RoadStyle.riverside => side ? .25 : .75,
+    RoadStyle.switchback => side ? .2 : .8,
+  };
+  final start = Offset(width * startX, height - mapBottomPad);
+  final trail = roadFor(area.road, start, mapTopPad, width, seed: area.number);
   return AreaLayout(
     width: width,
     height: height,
     nodes: _spread(trail, first, count, includeStart: true),
     trail: trail,
   );
+}
+
+/// The road of an area, from [start] up to the height [topY], shaped by its
+/// [style]. Every shape ends exactly at [topY] and is returned densely
+/// sampled, so stages can be spread along it at equal distances.
+List<Offset> roadFor(
+  RoadStyle style,
+  Offset start,
+  double topY,
+  double width, {
+  int seed = 0,
+}) {
+  final rng = math.Random(seed * 131 + style.index);
+  final corners = <Offset>[start];
+  var x = start.dx, y = start.dy;
+
+  void up(double rise) {
+    y = math.max(topY, y - rise);
+    corners.add(Offset(x, y));
+  }
+
+  void across(double toX) {
+    if (y <= topY) return;
+    x = toX;
+    corners.add(Offset(x, y));
+  }
+
+  double col(double f) => width * f;
+  switch (style) {
+    case RoadStyle.meander:
+      return serpentine(start, topY, width, seed: seed);
+    case RoadStyle.zigzag:
+      // Long right-angle switchbacks from one side to the other.
+      final left = col(.22), right = col(.78);
+      up(stageSpacing * 1.2);
+      var toRight = x < width / 2;
+      while (y > topY) {
+        across(toRight ? right : left);
+        up(stageSpacing * 2.6);
+        toRight = !toRight;
+      }
+    case RoadStyle.stairs:
+      // Straight flights of stone steps with short landings that step aside.
+      final lanes = [col(.40), col(.60)];
+      var lane = x < width / 2 ? 0 : 1;
+      across(lanes[lane]);
+      while (y > topY) {
+        up(stageSpacing * 6.5);
+        lane = 1 - lane;
+        across(lanes[lane]);
+      }
+    case RoadStyle.weave:
+      // Threads between houses and rocks: right angles of varied lengths.
+      final columns = [
+        for (final f in const [.2, .35, .5, .65, .8]) col(f),
+      ];
+      var i = columns.indexWhere((c) => (c - x).abs() < width * .1);
+      if (i < 0) i = 2;
+      across(columns[i]);
+      while (y > topY) {
+        up(stageSpacing * (1.1 + rng.nextDouble() * 1.7));
+        var next = i;
+        while ((next - i).abs() < 1) {
+          next = rng.nextInt(columns.length);
+        }
+        i = next;
+        across(columns[i]);
+      }
+    case RoadStyle.riverside:
+      // Up one bank of the river, over a bridge, up the other bank.
+      final banks = [col(.25), col(.75)];
+      var bank = x < width / 2 ? 0 : 1;
+      across(banks[bank]);
+      while (y > topY) {
+        up(stageSpacing * 3.6);
+        bank = 1 - bank;
+        across(banks[bank]);
+      }
+    case RoadStyle.switchback:
+      // A mountain road climbing in diagonal turns.
+      final left = col(.2), right = col(.8);
+      var toRight = x < width / 2;
+      while (y > topY) {
+        final rise = stageSpacing * 2.3;
+        final nextY = math.max(topY, y - rise);
+        final target = toRight ? right : left;
+        // A shorter last leg still ends on the top line.
+        final f = (y - nextY) / rise;
+        x = x + (target - x) * f;
+        y = nextY;
+        corners.add(Offset(x, y));
+        toRight = !toRight;
+      }
+  }
+  if (corners.last.dy > topY) corners.add(Offset(corners.last.dx, topY));
+  return densify(corners);
+}
+
+/// Adds points every few pixels along straight segments.
+List<Offset> densify(List<Offset> corners, {double step = 6}) {
+  final out = <Offset>[corners.first];
+  for (var i = 1; i < corners.length; i++) {
+    final a = corners[i - 1], b = corners[i];
+    final d = (b - a).distance;
+    if (d == 0) continue;
+    final n = math.max(1, (d / step).ceil());
+    for (var k = 1; k <= n; k++) {
+      out.add(Offset.lerp(a, b, k / n)!);
+    }
+  }
+  return out;
 }
 
 /// A gently winding road from [start] up to the height [topY].

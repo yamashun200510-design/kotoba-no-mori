@@ -15,6 +15,12 @@ enum AreaTheme {
 
 enum AreaSeason { spring, summer, autumn, winter, dusk }
 
+/// The character of the road the app draws in an area, so areas do not all
+/// look alike: winding, right-angle zigzags, straight stone stairs, a road
+/// threading between houses and rocks, a riverside path with bridges, and a
+/// mountain switchback.
+enum RoadStyle { meander, zigzag, stairs, weave, riverside, switchback }
+
 class ForestArea {
   final int number; // 1-based
   final String name;
@@ -26,11 +32,15 @@ class ForestArea {
   /// is repeated down the map and the app draws the road on top, so stage
   /// markers always sit on the road (see HANDOVER.md, エリア一覧).
   final String? image;
+
+  /// Shape of the road drawn over the scenery.
+  final RoadStyle road;
   const ForestArea(
     this.number,
     this.name,
     this.theme,
-    this.season, {
+    this.season,
+    this.road, {
     this.image,
   });
 
@@ -43,31 +53,127 @@ const stagesPerArea = 40;
 /// A journey through Japanese seasons: 森→川辺→丘→田んぼ→山→海辺→雪原→夕焼けの草原.
 /// Area 1 keeps the original 花咲く小道 map for stages 1-10.
 const forestAreas = <ForestArea>[
-  ForestArea(1, '花咲く小道', AreaTheme.forest, AreaSeason.spring),
-  ForestArea(2, 'せせらぎの川辺', AreaTheme.river, AreaSeason.spring),
-  ForestArea(3, '菜の花の丘', AreaTheme.hill, AreaSeason.spring),
-  ForestArea(4, 'れんげの田んぼ', AreaTheme.paddy, AreaSeason.spring),
-  ForestArea(5, '山桜の峠', AreaTheme.mountain, AreaSeason.spring),
-  ForestArea(6, '春風の浜辺', AreaTheme.seaside, AreaSeason.spring),
-  ForestArea(7, '青葉の森', AreaTheme.forest, AreaSeason.summer),
-  ForestArea(8, 'ほたるの小川', AreaTheme.river, AreaSeason.summer),
-  ForestArea(9, 'ひまわりの丘', AreaTheme.hill, AreaSeason.summer),
-  ForestArea(10, '青田の里', AreaTheme.paddy, AreaSeason.summer),
-  ForestArea(11, '入道雲の山', AreaTheme.mountain, AreaSeason.summer),
-  ForestArea(12, '潮騒の海辺', AreaTheme.seaside, AreaSeason.summer),
-  ForestArea(13, '夕焼けの草原', AreaTheme.meadow, AreaSeason.dusk),
-  ForestArea(14, '紅葉の森', AreaTheme.forest, AreaSeason.autumn),
-  ForestArea(15, '月見の川辺', AreaTheme.river, AreaSeason.autumn),
-  ForestArea(16, 'すすきの丘', AreaTheme.hill, AreaSeason.autumn),
-  ForestArea(17, '黄金の田んぼ', AreaTheme.paddy, AreaSeason.autumn),
-  ForestArea(18, '錦の山', AreaTheme.mountain, AreaSeason.autumn),
-  ForestArea(19, '茜色の草原', AreaTheme.meadow, AreaSeason.autumn),
-  ForestArea(20, '冬木立の森', AreaTheme.forest, AreaSeason.winter),
-  ForestArea(21, '朝霧の川辺', AreaTheme.river, AreaSeason.winter),
-  ForestArea(22, '雪化粧の丘', AreaTheme.hill, AreaSeason.winter),
-  ForestArea(23, '銀世界の雪原', AreaTheme.snowfield, AreaSeason.winter),
-  ForestArea(24, '冬の海辺', AreaTheme.seaside, AreaSeason.winter),
-  ForestArea(25, 'ふたたび春の森', AreaTheme.forest, AreaSeason.spring),
+  ForestArea(
+    1,
+    '花咲く小道',
+    AreaTheme.forest,
+    AreaSeason.spring,
+    RoadStyle.meander,
+  ),
+  ForestArea(
+    2,
+    'せせらぎの川辺',
+    AreaTheme.river,
+    AreaSeason.spring,
+    RoadStyle.riverside,
+  ),
+  ForestArea(3, '菜の花の丘', AreaTheme.hill, AreaSeason.spring, RoadStyle.zigzag),
+  ForestArea(4, 'れんげの田んぼ', AreaTheme.paddy, AreaSeason.spring, RoadStyle.weave),
+  ForestArea(
+    5,
+    '山桜の峠',
+    AreaTheme.mountain,
+    AreaSeason.spring,
+    RoadStyle.switchback,
+  ),
+  ForestArea(
+    6,
+    '春風の浜辺',
+    AreaTheme.seaside,
+    AreaSeason.spring,
+    RoadStyle.meander,
+  ),
+  ForestArea(7, '青葉の森', AreaTheme.forest, AreaSeason.summer, RoadStyle.weave),
+  ForestArea(
+    8,
+    'ほたるの小川',
+    AreaTheme.river,
+    AreaSeason.summer,
+    RoadStyle.riverside,
+  ),
+  ForestArea(9, 'ひまわりの丘', AreaTheme.hill, AreaSeason.summer, RoadStyle.zigzag),
+  ForestArea(10, '青田の里', AreaTheme.paddy, AreaSeason.summer, RoadStyle.weave),
+  ForestArea(
+    11,
+    '入道雲の山',
+    AreaTheme.mountain,
+    AreaSeason.summer,
+    RoadStyle.stairs,
+  ),
+  ForestArea(
+    12,
+    '潮騒の海辺',
+    AreaTheme.seaside,
+    AreaSeason.summer,
+    RoadStyle.switchback,
+  ),
+  ForestArea(
+    13,
+    '夕焼けの草原',
+    AreaTheme.meadow,
+    AreaSeason.dusk,
+    RoadStyle.meander,
+  ),
+  ForestArea(14, '紅葉の森', AreaTheme.forest, AreaSeason.autumn, RoadStyle.stairs),
+  ForestArea(
+    15,
+    '月見の川辺',
+    AreaTheme.river,
+    AreaSeason.autumn,
+    RoadStyle.riverside,
+  ),
+  ForestArea(16, 'すすきの丘', AreaTheme.hill, AreaSeason.autumn, RoadStyle.zigzag),
+  ForestArea(17, '黄金の田んぼ', AreaTheme.paddy, AreaSeason.autumn, RoadStyle.weave),
+  ForestArea(
+    18,
+    '錦の山',
+    AreaTheme.mountain,
+    AreaSeason.autumn,
+    RoadStyle.switchback,
+  ),
+  ForestArea(
+    19,
+    '茜色の草原',
+    AreaTheme.meadow,
+    AreaSeason.autumn,
+    RoadStyle.meander,
+  ),
+  ForestArea(
+    20,
+    '冬木立の森',
+    AreaTheme.forest,
+    AreaSeason.winter,
+    RoadStyle.stairs,
+  ),
+  ForestArea(
+    21,
+    '朝霧の川辺',
+    AreaTheme.river,
+    AreaSeason.winter,
+    RoadStyle.riverside,
+  ),
+  ForestArea(22, '雪化粧の丘', AreaTheme.hill, AreaSeason.winter, RoadStyle.zigzag),
+  ForestArea(
+    23,
+    '銀世界の雪原',
+    AreaTheme.snowfield,
+    AreaSeason.winter,
+    RoadStyle.weave,
+  ),
+  ForestArea(
+    24,
+    '冬の海辺',
+    AreaTheme.seaside,
+    AreaSeason.winter,
+    RoadStyle.zigzag,
+  ),
+  ForestArea(
+    25,
+    'ふたたび春の森',
+    AreaTheme.forest,
+    AreaSeason.spring,
+    RoadStyle.stairs,
+  ),
 ];
 
 ForestArea areaOfStage(int stageId) =>
